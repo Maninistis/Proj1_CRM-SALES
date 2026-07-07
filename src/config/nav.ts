@@ -4,6 +4,7 @@ import {
   Shield,
   ScrollText,
   Settings,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,17 @@ export const navGroups: NavGroup[] = [
         href: "/dashboard",
         icon: LayoutDashboard,
         permission: "dashboard:read",
+      },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      {
+        label: "Leads",
+        href: "/leads",
+        icon: UserPlus,
+        permission: "leads:read",
       },
     ],
   },
