@@ -5,6 +5,9 @@ import {
   ScrollText,
   Settings,
   UserPlus,
+  TrendingUp,
+  FileText,
+  Package,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +43,24 @@ export const navGroups: NavGroup[] = [
         href: "/leads",
         icon: UserPlus,
         permission: "leads:read",
+      },
+      {
+        label: "Opportunities",
+        href: "/opportunities",
+        icon: TrendingUp,
+        permission: "opportunities:read",
+      },
+      {
+        label: "Quotations",
+        href: "/quotations",
+        icon: FileText,
+        permission: "quotations:read",
+      },
+      {
+        label: "Products",
+        href: "/products",
+        icon: Package,
+        permission: "quotations:read",
       },
     ],
   },

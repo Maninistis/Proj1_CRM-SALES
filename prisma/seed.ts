@@ -85,7 +85,7 @@ async function main() {
   const defaultSettings = [
     { key: "company_name", value: "CRM Sales Inc.", category: "general" },
     { key: "default_currency", value: "USD", category: "general" },
-    { key: "tax_rate", value: "0.10", category: "tax" },
+    { key: "tax_rate", value: "0.12", category: "tax" },
     { key: "payment_terms_days", value: "30", category: "general" },
     { key: "lead_prefix", value: "LEAD", category: "document_numbers" },
     { key: "opportunity_prefix", value: "OPP", category: "document_numbers" },

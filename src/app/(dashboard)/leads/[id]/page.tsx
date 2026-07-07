@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { getById as getLead } from "@/features/lead/services/lead.service";
 import { findByIdIncludingDeleted } from "@/features/lead/repositories/lead.repository";
+import { findByLeadId } from "@/features/opportunity/repositories/opportunity.repository";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS } from "@/features/lead/constants";
 import { LeadDetailActions } from "@/components/leads/lead-detail-actions";
+import { LeadConvertForm } from "@/components/opportunities/lead-convert-form";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 
@@ -116,6 +118,10 @@ export default async function LeadDetailPage({
             <p className="whitespace-pre-wrap text-sm">{lead.notes}</p>
           </CardContent>
         </Card>
+      )}
+
+      {!isDeleted && lead.status === "QUALIFIED" && !(await findByLeadId(id)) && (
+        <LeadConvertForm leadId={id} leadName={`${lead.firstName} ${lead.lastName}`} />
       )}
     </div>
   );

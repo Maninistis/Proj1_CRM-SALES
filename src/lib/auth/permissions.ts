@@ -24,11 +24,13 @@ export const PERMISSIONS = [
   "opportunities:read",
   "opportunities:create",
   "opportunities:update",
+  "opportunities:delete",
 
   // CRM — Quotations
   "quotations:read",
   "quotations:create",
   "quotations:update",
+  "quotations:delete",
 
   // CRM — Customers
   "customers:read",
@@ -120,9 +122,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "opportunities:read",
     "opportunities:create",
     "opportunities:update",
+    "opportunities:delete",
     "quotations:read",
     "quotations:create",
     "quotations:update",
+    "quotations:delete",
     "customers:read",
     "customers:create",
     "customers:update",

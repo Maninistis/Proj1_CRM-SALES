@@ -1,0 +1,134 @@
+"use client";
+
+import { useActionState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { opportunityCreateSchema, type OpportunityCreateInput } from "@/features/opportunity/schemas/opportunity-create";
+import { createOpportunityAction, type OpportunityActionState } from "@/features/opportunity/actions/opportunity-actions";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+type LeadOption = { id: string; label: string };
+type UserOption = { id: string; name: string };
+
+export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: UserOption[] }) {
+  const [state, formAction] = useActionState<OpportunityActionState, FormData>(
+    createOpportunityAction,
+    { success: false }
+  );
+
+  const form = useForm<OpportunityCreateInput>({
+    resolver: zodResolver(opportunityCreateSchema),
+    defaultValues: {
+      leadId: "",
+      title: "",
+      description: "",
+      estimatedValue: 0,
+      expectedCloseDate: "",
+      assignedToId: "",
+    },
+  });
+
+  return (
+    <Card className="max-w-2xl">
+      <CardHeader><CardTitle>New Opportunity</CardTitle></CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form action={formAction} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="leadId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lead *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a qualified lead" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {leads.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>{l.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title *</FormLabel>
+                  <FormControl><Input placeholder="Enterprise software deal" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl><Textarea placeholder="Opportunity details..." rows={3} {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="estimatedValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimated Value *</FormLabel>
+                    <FormControl><Input type="number" min="0" step="0.01" placeholder="50000" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="expectedCloseDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Expected Close Date *</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="assignedToId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assigned To</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {users.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <div className="flex gap-2">
+              <Button type="submit">Create Opportunity</Button>
+              <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
