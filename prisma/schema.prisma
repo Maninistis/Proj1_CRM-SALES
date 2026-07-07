@@ -28,6 +28,8 @@ model User {
   role              Role                @relation(fields: [roleRoleId], references: [id])
   accounts          Account[]
   sessions          Session[]
+  assignedLeads     Lead[]              @relation("AssignedLeads")
+  createdLeads      Lead[]              @relation("CreatedLeads")
 
   @@map("users")
   @@index([roleRoleId])
@@ -148,4 +150,47 @@ model Setting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+// === DOCUMENT NUMBER COUNTER ===
+
+model Counter {
+  id        String   @id @default(cuid())
+  prefix    String   @unique
+  sequence  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("counters")
+}
+
+// === CRM — LEAD ===
+
+model Lead {
+  id           String    @id @default(cuid())
+  documentNo   String    @unique @map("document_no")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  email        String?
+  phone        String?
+  company      String?
+  jobTitle     String?   @map("job_title")
+  source       String    @default("OTHER")
+  status       String    @default("NEW")
+  assignedToId String?   @map("assigned_to_id")
+  createdById  String?   @map("created_by_id")
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  assignedTo User? @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  createdBy  User? @relation("CreatedLeads", fields: [createdById], references: [id])
+
+  @@map("leads")
+  @@index([status])
+  @@index([assignedToId])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@index([createdAt])
 }
