@@ -48,16 +48,19 @@ export const PERMISSIONS = [
   "delivery-notes:read",
   "delivery-notes:create",
   "delivery-notes:update",
+  "delivery-notes:delete",
 
   // Sales — Invoices
   "sales-invoices:read",
   "sales-invoices:create",
   "sales-invoices:update",
+  "sales-invoices:delete",
 
   // Sales — Payments
   "payments:read",
   "payments:create",
   "payments:update",
+  "payments:delete",
 
   // System
   "users:read",
@@ -140,12 +143,15 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "delivery-notes:read",
     "delivery-notes:create",
     "delivery-notes:update",
+    "delivery-notes:delete",
     "sales-invoices:read",
     "sales-invoices:create",
     "sales-invoices:update",
+    "sales-invoices:delete",
     "payments:read",
     "payments:create",
     "payments:update",
+    "payments:delete",
     "reports:read",
   ],
   "Sales Rep": [

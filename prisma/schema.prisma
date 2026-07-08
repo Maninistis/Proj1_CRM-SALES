@@ -35,6 +35,9 @@ model User {
   createdQuotations     Quotation[]     @relation("CreatedQuotations")
   createdCustomers      Customer[]      @relation("CreatedCustomers")
   createdSalesOrders    SalesOrder[]    @relation("CreatedSalesOrders")
+  createdDeliveryNotes  DeliveryNote[]  @relation("CreatedDeliveryNotes")
+  createdInvoices       SalesInvoice[]  @relation("CreatedInvoices")
+  receivedPayments     Payment[]       @relation("ReceivedPayments")
 
   @@map("users")
   @@index([roleRoleId])
@@ -327,6 +330,8 @@ model Customer {
   contacts   CustomerContact[]
   addresses  CustomerAddress[]
   salesOrders SalesOrder[]
+  invoices   SalesInvoice[]
+  payments   Payment[]
 
   @@map("customers")
   @@index([status])
@@ -399,6 +404,8 @@ model SalesOrder {
   quotation  Quotation?        @relation(fields: [quotationId], references: [id])
   createdBy  User?             @relation("CreatedSalesOrders", fields: [createdById], references: [id])
   items      SalesOrderItem[]
+  deliveryNotes DeliveryNote[]
+  invoice    SalesInvoice?
 
   @@map("sales_orders")
   @@index([customerId])
@@ -421,9 +428,150 @@ model SalesOrderItem {
   updatedAt         DateTime  @updatedAt @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
 
-  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  salesOrder       SalesOrder       @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  deliveryNoteItems DeliveryNoteItem[]
 
   @@map("sales_order_items")
   @@index([salesOrderId])
   @@index([deletedAt])
+}
+
+// === SALES — DELIVERY NOTE ===
+
+model DeliveryNote {
+  id              String    @id @default(cuid())
+  documentNo      String    @unique @map("document_no")
+  salesOrderId    String    @map("sales_order_id")
+  status          String    @default("DRAFT")
+  deliveryDate    DateTime? @map("delivery_date")
+  carrier         String?
+  trackingNumber  String?   @map("tracking_number")
+  notes           String?   @db.Text
+  createdById     String?   @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  salesOrder SalesOrder         @relation(fields: [salesOrderId], references: [id])
+  createdBy  User?              @relation("CreatedDeliveryNotes", fields: [createdById], references: [id])
+  items      DeliveryNoteItem[]
+
+  @@map("delivery_notes")
+  @@index([salesOrderId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model DeliveryNoteItem {
+  id                String   @id @default(cuid())
+  deliveryNoteId    String   @map("delivery_note_id")
+  salesOrderItemId  String   @map("sales_order_item_id")
+  description       String
+  quantity          Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  deliveryNote  DeliveryNote   @relation(fields: [deliveryNoteId], references: [id], onDelete: Cascade)
+  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
+
+  @@map("delivery_note_items")
+  @@index([deliveryNoteId])
+  @@index([salesOrderItemId])
+  @@index([deletedAt])
+}
+
+// === SALES — INVOICE ===
+
+model SalesInvoice {
+  id            String    @id @default(cuid())
+  documentNo    String    @unique @map("document_no")
+  salesOrderId  String    @unique @map("sales_order_id")
+  customerId    String    @map("customer_id")
+  customerName  String    @map("customer_name")
+  customerEmail String?   @map("customer_email")
+  customerPhone String?   @map("customer_phone")
+  customerAddress String? @db.Text @map("customer_address")
+  status        String    @default("DRAFT")
+  issueDate     DateTime  @map("issue_date")
+  dueDate       DateTime  @map("due_date")
+  currency      String    @default("PHP")
+  subtotal      Decimal   @default(0) @db.Decimal(12, 2)
+  discountTotal Decimal   @default(0) @db.Decimal(12, 2) @map("discount_total")
+  taxRate       Decimal   @default(0) @db.Decimal(5, 4) @map("tax_rate")
+  taxTotal      Decimal   @default(0) @db.Decimal(12, 2) @map("tax_total")
+  grandTotal    Decimal   @db.Decimal(12, 2) @map("grand_total")
+  paidAmount    Decimal   @default(0) @db.Decimal(12, 2) @map("paid_amount")
+  paidAt        DateTime? @map("paid_at")
+  notes         String?   @db.Text
+  createdById   String?   @map("created_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  salesOrder SalesOrder         @relation(fields: [salesOrderId], references: [id])
+  customer   Customer           @relation(fields: [customerId], references: [id])
+  createdBy  User?              @relation("CreatedInvoices", fields: [createdById], references: [id])
+  items      SalesInvoiceItem[]
+  payments   Payment[]
+
+  @@map("sales_invoices")
+  @@index([customerId])
+  @@index([salesOrderId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model SalesInvoiceItem {
+  id              String   @id @default(cuid())
+  salesInvoiceId  String   @map("sales_invoice_id")
+  description     String
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitPrice       Decimal  @db.Decimal(12, 2) @map("unit_price")
+  discountPercent Decimal  @default(0) @db.Decimal(5, 2) @map("discount_percent")
+  lineTotal       Decimal  @default(0) @db.Decimal(12, 2) @map("line_total")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  salesInvoice SalesInvoice @relation(fields: [salesInvoiceId], references: [id], onDelete: Cascade)
+
+  @@map("sales_invoice_items")
+  @@index([salesInvoiceId])
+  @@index([deletedAt])
+}
+
+// === SALES — PAYMENT ===
+
+model Payment {
+  id              String    @id @default(cuid())
+  documentNo      String    @unique @map("document_no")
+  salesInvoiceId  String    @map("sales_invoice_id")
+  customerId      String    @map("customer_id")
+  customerName    String    @map("customer_name")
+  amount          Decimal   @db.Decimal(12, 2)
+  paymentMethod   String    @map("payment_method")
+  referenceNumber String?   @map("reference_number")
+  paymentDate     DateTime  @map("payment_date")
+  status          String    @default("RECEIVED")
+  notes           String?   @db.Text
+  receivedById    String?   @map("received_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  salesInvoice SalesInvoice @relation(fields: [salesInvoiceId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  receivedBy   User?        @relation("ReceivedPayments", fields: [receivedById], references: [id])
+
+  @@map("payments")
+  @@index([salesInvoiceId])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentDate])
+  @@index([deletedAt])
+  @@index([createdAt])
 }

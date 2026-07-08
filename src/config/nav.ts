@@ -10,6 +10,9 @@ import {
   Package,
   Building2,
   ShoppingCart,
+  Truck,
+  Receipt,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -80,6 +83,24 @@ export const navGroups: NavGroup[] = [
         href: "/sales-orders",
         icon: ShoppingCart,
         permission: "sales-orders:read",
+      },
+      {
+        label: "Delivery Notes",
+        href: "/delivery-notes",
+        icon: Truck,
+        permission: "delivery-notes:read",
+      },
+      {
+        label: "Invoices",
+        href: "/sales-invoices",
+        icon: Receipt,
+        permission: "sales-invoices:read",
+      },
+      {
+        label: "Payments",
+        href: "/payments",
+        icon: Wallet,
+        permission: "payments:read",
       },
     ],
   },

@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/sales-order/constants";
 import { SODetailActions } from "@/components/sales-orders/so-detail-actions";
+import { CreateDNFromSOButton } from "@/components/sales-orders/create-dn-button";
+import { GenerateInvoiceButton } from "@/components/invoices/generate-invoice-button";
 import { notFound } from "next/navigation";
 
 export default async function SODetailPage({
@@ -36,6 +38,14 @@ export default async function SODetailPage({
       </div>
 
       <SODetailActions soId={id} status={so.status} isDeleted={isDeleted} />
+
+      {!isDeleted && ["CONFIRMED", "FULFILLING"].includes(so.status) && (
+        <CreateDNFromSOButton soId={id} />
+      )}
+
+      {!isDeleted && ["DELIVERED", "FULFILLING"].includes(so.status) && (
+        <GenerateInvoiceButton soId={id} />
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
