@@ -9,8 +9,15 @@ type AuditLog = {
   entityType: string;
   entityId: string;
   action: string;
-  userId: string;
+  userName?: string;
   createdAt: string;
+};
+
+const ACTION_VARIANTS: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
+  CREATE: "default",
+  DELETE: "destructive",
+  UPDATE: "secondary",
+  TRANSITION: "outline",
 };
 
 const columns: ColumnDef<AuditLog>[] = [
@@ -19,7 +26,7 @@ const columns: ColumnDef<AuditLog>[] = [
     header: "Timestamp",
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">
-        {new Date(row.original.createdAt).toLocaleString()}
+        {new Date(row.original.createdAt).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}
       </span>
     ),
   },
@@ -27,37 +34,22 @@ const columns: ColumnDef<AuditLog>[] = [
   {
     accessorKey: "action",
     header: "Action",
-    cell: ({ row }) => {
-      const action = row.original.action;
-      const variant =
-        action === "CREATE" ? "default" :
-        action === "DELETE" ? "destructive" :
-        action === "UPDATE" ? "secondary" :
-        "outline";
-      return <Badge variant={variant}>{action}</Badge>;
-    },
-  },
-  {
-    accessorKey: "entityId",
-    header: "Entity ID",
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {row.original.entityId.slice(0, 12)}...
-      </span>
+      <Badge variant={ACTION_VARIANTS[row.original.action] ?? "outline"}>
+        {row.original.action}
+      </Badge>
     ),
   },
   {
-    accessorKey: "userId",
-    header: "User ID",
+    id: "user",
+    header: "User",
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {row.original.userId.slice(0, 12)}...
-      </span>
+      <span className="text-sm font-medium">{row.original.userName ?? "System"}</span>
     ),
   },
 ];
 
-type AuditLogTableProps = {
+type Props = {
   data: AuditLog[];
   page: number;
   pageSize: number;
@@ -65,7 +57,7 @@ type AuditLogTableProps = {
   totalPages: number;
 };
 
-export function AuditLogTable({ data, page, pageSize, total, totalPages }: AuditLogTableProps) {
+export function AuditLogTable({ data, page, pageSize, total, totalPages }: Props) {
   return (
     <DataTable
       columns={columns}

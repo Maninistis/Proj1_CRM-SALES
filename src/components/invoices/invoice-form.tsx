@@ -50,13 +50,13 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
   );
 
   return (
-    <Card className="max-w-4xl">
+    <Card className="max-w-full sm:max-w-4xl">
       <CardHeader><CardTitle>New Invoice — {soDocumentNo} ({customerName})</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <FormField control={form.control} name="issueDate" render={({ field }) => (
                 <FormItem><FormLabel>Issue Date *</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -107,7 +107,7 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
               </div>
             </div>
 
-            <div className="ml-auto w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
+            <div className="ml-auto w-full sm:w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">₱{totals.subtotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="font-medium text-red-600">-₱{totals.discountTotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">VAT</span><span className="font-medium">₱{totals.taxTotal.toLocaleString()}</span></div>

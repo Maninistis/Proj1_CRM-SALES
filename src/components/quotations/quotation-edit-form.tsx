@@ -73,12 +73,12 @@ export function QuotationEditForm({ quote, catalog }: { quote: QuoteFormData; ca
   );
 
   return (
-    <Card className="max-w-4xl">
+    <Card className="max-w-full sm:max-w-4xl">
       <CardHeader><CardTitle>Edit Quotation</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="subject"
@@ -103,7 +103,7 @@ export function QuotationEditForm({ quote, catalog }: { quote: QuoteFormData; ca
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="discountTotal"
@@ -228,7 +228,7 @@ export function QuotationEditForm({ quote, catalog }: { quote: QuoteFormData; ca
               </div>
             </div>
 
-            <div className="ml-auto w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
+            <div className="ml-auto w-full sm:w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">₱{totals.subtotal.toLocaleString()}</span>

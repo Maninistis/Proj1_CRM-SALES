@@ -22,5 +22,11 @@ export async function findMany(params: {
     prisma.auditLog.count({ where }),
   ]);
 
-  return { data, total };
+  const userIds = [...new Set(data.map((d) => d.userId))];
+  const users = userIds.length > 0
+    ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } })
+    : [];
+  const userMap = new Map(users.map((u) => [u.id, u.name]));
+
+  return { data: data.map((d) => ({ ...d, userName: userMap.get(d.userId) ?? "System" })), total };
 }

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { logoutAction } from "@/features/user/actions/auth-actions";
+import { MobileMenuButton } from "@/components/layout/mobile-menu-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,16 +13,17 @@ import { LogOut } from "lucide-react";
 
 export async function Topbar() {
   const session = await auth();
-
   if (!session?.user) return null;
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-      <div className="flex-1" />
+    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-3 sm:px-4 lg:px-6">
+      <MobileMenuButton />
 
-      <div className="flex items-center gap-4">
+      <div className="hidden flex-1 lg:block" />
+
+      <div className="flex items-center gap-3">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-muted sm:px-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
               {session.user.name?.charAt(0).toUpperCase() ?? "U"}
             </div>
@@ -31,12 +33,8 @@ export async function Topbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
-              <p className="text-sm font-medium text-navy-500">
-                {session.user.name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {session.user.email}
-              </p>
+              <p className="text-sm font-medium text-navy-500">{session.user.name}</p>
+              <p className="text-xs text-muted-foreground">{session.user.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <form action={logoutAction}>

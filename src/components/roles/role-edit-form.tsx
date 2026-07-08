@@ -53,7 +53,7 @@ export function RoleEditForm({ role, permissions }: RoleEditFormProps) {
   }, {} as Record<string, Permission[]>);
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader>
         <CardTitle>Edit Role</CardTitle>
       </CardHeader>
@@ -94,7 +94,7 @@ export function RoleEditForm({ role, permissions }: RoleEditFormProps) {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {resource}
                     </p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div className="grid sm:grid-cols-2 gap-2 sm:grid-cols-3">
                       {perms.map((p) => {
                         const checked = selectedIds.has(p.id);
                         return (

@@ -34,7 +34,7 @@ export default async function RoleDetailPage({
       <PageHeader title={role.name} description={role.description || "No description"}>
         <Link href={`/roles/${id}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
       </PageHeader>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Info</CardTitle>

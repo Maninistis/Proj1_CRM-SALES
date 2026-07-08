@@ -8,6 +8,7 @@ import { createUserAction, type UserActionState } from "@/features/user/actions/
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { buildOptionItems } from "@/lib/select-helpers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RoleWithPermissions } from "@/features/role/repositories/role.repository";
@@ -30,7 +31,7 @@ export function UserForm({ roles }: { roles: RoleWithPermissions[] }) {
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader>
         <CardTitle>New User</CardTitle>
       </CardHeader>
@@ -82,7 +83,7 @@ export function UserForm({ roles }: { roles: RoleWithPermissions[] }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select items={buildOptionItems(roles.map(r => ({value: r.id, label: r.name})))} value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
@@ -106,7 +107,7 @@ export function UserForm({ roles }: { roles: RoleWithPermissions[] }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select items={{"ACTIVE": "Active", "INACTIVE": "Inactive"}} value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />

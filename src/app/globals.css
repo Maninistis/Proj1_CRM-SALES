@@ -83,7 +83,7 @@
 }
 
 :root {
-  --background: #F1EBE3;
+  --background: #F7F8FA;
   --foreground: #103447;
   --card: #FFFFFF;
   --card-foreground: #103447;
@@ -91,15 +91,15 @@
   --popover-foreground: #103447;
   --primary: #DF853A;
   --primary-foreground: #FFFFFF;
-  --secondary: #D6E6EE;
+  --secondary: #EFF1F4;
   --secondary-foreground: #103447;
-  --muted: #F7F2EC;
+  --muted: #F2F4F7;
   --muted-foreground: #787F87;
   --accent: #FFC9A3;
   --accent-foreground: #103447;
   --destructive: #C84C4C;
-  --border: #E5DDD2;
-  --input: #E5DDD2;
+  --border: #E4E7EC;
+  --input: #E4E7EC;
   --ring: #DF853A;
   --chart-1: #DF853A;
   --chart-2: #1A5366;
@@ -115,9 +115,9 @@
   --sidebar-foreground: #103447;
   --sidebar-primary: #DF853A;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F7F2EC;
+  --sidebar-accent: #F2F4F7;
   --sidebar-accent-foreground: #103447;
-  --sidebar-border: #E5DDD2;
+  --sidebar-border: #E4E7EC;
   --sidebar-ring: #DF853A;
 }
 
@@ -175,6 +175,10 @@
     font-family: var(--font-montserrat), system-ui, sans-serif;
     color: #103447;
   }
+  h1 { font-size: 1.75rem; font-weight: 700; }
+  h2 { font-size: 1.5rem; font-weight: 700; }
+  h3 { font-size: 1.25rem; font-weight: 600; }
+  h4 { font-size: 1.125rem; font-weight: 600; }
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     color: #F1EBE3;
   }

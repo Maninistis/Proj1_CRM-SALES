@@ -53,7 +53,7 @@ export function DNForm({ salesOrderId, soDocumentNo, soItems }: { salesOrderId: 
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <FormField control={form.control} name="deliveryDate" render={({ field }) => (
                 <FormItem><FormLabel>Delivery Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
               )} />

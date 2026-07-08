@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunityCreateSchema, type OpportunityCreateInput } from "@/features/opportunity/schemas/opportunity-create";
 import { createOpportunityAction, type OpportunityActionState } from "@/features/opportunity/actions/opportunity-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { buildItems, buildOptionItems } from "@/lib/select-helpers";
+import { STAGE_OPTIONS } from "@/features/opportunity/constants";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -34,7 +36,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader><CardTitle>New Opportunity</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
@@ -45,7 +47,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Lead *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select items={leads.length > 0 ? buildItems(leads.map(l => ({id: l.id, name: l.label}))) : {}} onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a qualified lead" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {leads.map((l) => (
@@ -79,7 +81,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="estimatedValue"
@@ -109,7 +111,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assigned To</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select items={leads.length > 0 ? buildItems(leads.map(l => ({id: l.id, name: l.label}))) : {}} onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {users.map((u) => (

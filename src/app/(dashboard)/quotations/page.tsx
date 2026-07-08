@@ -68,7 +68,7 @@ export default async function QuotationsPage({
                 <Link
                   key={opt.value}
                   href={`?${url.toString()}`}
-                  className={`rounded-md border px-3 py-1 text-sm ${isActive ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}
+                  className={`rounded-md border px-3 py-1 text-sm ${isActive ? "bg-[#103447] text-[#F1EBE3] border-[#103447]" : "border-border hover:bg-muted"}`}
                 >
                   {opt.label}
                 </Link>

@@ -20,7 +20,7 @@ export default async function AuditLogsPage({
     entityType: log.entityType,
     entityId: log.entityId,
     action: log.action,
-    userId: log.userId,
+    userName: log.userName,
     createdAt: log.createdAt.toISOString(),
   }));
 

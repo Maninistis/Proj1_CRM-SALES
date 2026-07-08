@@ -45,7 +45,7 @@ export default async function CustomerDetailPage({
 
       <CustomerDetailActions customerId={id} status={customer.status} isDeleted={isDeleted} />
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>Company Info</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">

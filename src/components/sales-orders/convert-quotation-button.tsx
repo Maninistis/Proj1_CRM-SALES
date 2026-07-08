@@ -34,7 +34,7 @@ export function ConvertQuotationToSOButton({
   }
 
   return (
-    <Card className="max-w-md border-primary/30">
+    <Card className="max-w-full sm:max-w-md border-primary/30">
       <CardHeader><CardTitle className="text-base">Convert to Sales Order</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">

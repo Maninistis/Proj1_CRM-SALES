@@ -52,7 +52,7 @@ export default async function PaymentsPage({
               if (!isActive) url.set("status", opt.value);
               if (query.search) url.set("search", query.search);
               if (query.method) url.set("method", query.method);
-              return <Link key={opt.value} href={`?${url.toString()}`} className={`rounded-md border px-3 py-1 text-sm ${isActive ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>{opt.label}</Link>;
+              return <Link key={opt.value} href={`?${url.toString()}`} className={`rounded-md border px-3 py-1 text-sm ${isActive ? "bg-[#103447] text-[#F1EBE3] border-[#103447]" : "border-border hover:bg-muted"}`}>{opt.label}</Link>;
             })}
             <span className="mx-2 text-muted-foreground">|</span>
             {METHOD_OPTIONS.map((opt) => {
@@ -62,7 +62,7 @@ export default async function PaymentsPage({
               if (!isActive) url.set("method", opt.value);
               if (query.search) url.set("search", query.search);
               if (query.status) url.set("status", query.status);
-              return <Link key={opt.value} href={`?${url.toString()}`} className={`rounded-md border px-3 py-1 text-sm ${isActive ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>{opt.label}</Link>;
+              return <Link key={opt.value} href={`?${url.toString()}`} className={`rounded-md border px-3 py-1 text-sm ${isActive ? "bg-[#103447] text-[#F1EBE3] border-[#103447]" : "border-border hover:bg-muted"}`}>{opt.label}</Link>;
             })}
           </>
         )}

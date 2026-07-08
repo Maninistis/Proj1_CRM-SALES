@@ -34,7 +34,7 @@ export function RoleForm({ permissions }: { permissions: Permission[] }) {
   }, {} as Record<string, Permission[]>);
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader>
         <CardTitle>New Role</CardTitle>
       </CardHeader>
@@ -75,7 +75,7 @@ export function RoleForm({ permissions }: { permissions: Permission[] }) {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {resource}
                     </p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div className="grid sm:grid-cols-2 gap-2 sm:grid-cols-3">
                       {perms.map((p) => (
                         <Label
                           key={p.id}

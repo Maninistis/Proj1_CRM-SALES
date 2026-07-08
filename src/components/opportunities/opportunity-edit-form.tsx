@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { opportunityUpdateSchema, type OpportunityUpdateInput } from "@/features/opportunity/schemas/opportunity-update";
 import { updateOpportunityAction, type OpportunityActionState } from "@/features/opportunity/actions/opportunity-actions";
+import { buildItems, buildOptionItems } from "@/lib/select-helpers";
 import { STAGE_OPTIONS } from "@/features/opportunity/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ export function OpportunityEditForm({
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader><CardTitle>Edit Opportunity</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
@@ -83,7 +84,7 @@ export function OpportunityEditForm({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="estimatedValue"
@@ -107,14 +108,14 @@ export function OpportunityEditForm({
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="stage"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Stage</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select items={buildOptionItems(STAGE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         {STAGE_OPTIONS.map((opt) => (
@@ -132,7 +133,7 @@ export function OpportunityEditForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                    <Select items={buildItems(users)} value={field.value ?? undefined} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {users.map((u) => (

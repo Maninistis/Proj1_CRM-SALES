@@ -42,7 +42,7 @@ export function PaymentForm({
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader><CardTitle>Record Payment — {invoiceNo}</CardTitle></CardHeader>
       <CardContent>
         <div className="mb-4 rounded-md border border-border bg-muted/50 p-4 text-sm">
@@ -54,7 +54,7 @@ export function PaymentForm({
         <Form {...form}>
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="salesInvoiceId" value={invoiceId} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="amount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount (₱) *</FormLabel>
@@ -70,7 +70,7 @@ export function PaymentForm({
                 </FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Payment Method *</label>
                 <select name="paymentMethod" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue="BANK_TRANSFER">

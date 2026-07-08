@@ -24,7 +24,7 @@ export function LeadConvertForm({ leadId, leadName }: LeadConvertFormProps) {
     .split("T")[0];
 
   return (
-    <Card className="max-w-2xl border-primary/30">
+    <Card className="max-w-full border-primary/30">
       <CardHeader>
         <CardTitle className="text-lg">Convert to Opportunity</CardTitle>
       </CardHeader>
@@ -39,7 +39,7 @@ export function LeadConvertForm({ leadId, leadName }: LeadConvertFormProps) {
               defaultValue={`${leadName} — New Opportunity`}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="estimatedValue">Estimated Value *</Label>
               <Input

@@ -42,12 +42,12 @@ export function SOForm({ customers, defaultTaxRate, catalog }: { customers: Cust
   );
 
   return (
-    <Card className="max-w-4xl">
+    <Card className="max-w-full sm:max-w-4xl">
       <CardHeader><CardTitle>New Sales Order</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Customer *</label>
                 <select name="customerId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue="">
@@ -60,7 +60,7 @@ export function SOForm({ customers, defaultTaxRate, catalog }: { customers: Cust
               )} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <FormField control={form.control} name="expectedDeliveryDate" render={({ field }) => (
                 <FormItem><FormLabel>Expected Delivery</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -122,7 +122,7 @@ export function SOForm({ customers, defaultTaxRate, catalog }: { customers: Cust
               </div>
             </div>
 
-            <div className="ml-auto w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
+            <div className="ml-auto w-full sm:w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">₱{totals.subtotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="font-medium text-red-600">-₱{totals.discountTotal.toLocaleString()}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">VAT ({(Number(watchedTaxRate) || 0) * 100}%)</span><span className="font-medium">₱{totals.taxTotal.toLocaleString()}</span></div>

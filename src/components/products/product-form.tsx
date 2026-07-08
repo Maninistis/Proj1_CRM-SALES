@@ -28,12 +28,12 @@ export function ProductForm() {
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader><CardTitle>New Product / Service</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="name"

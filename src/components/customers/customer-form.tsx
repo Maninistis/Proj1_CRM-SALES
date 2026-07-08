@@ -7,6 +7,7 @@ import { customerCreateSchema, type CustomerCreateInput } from "@/features/custo
 import { createCustomerAction, type CustomerActionState } from "@/features/customer/actions/customer-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/forms/phone-input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -27,7 +28,7 @@ export function CustomerForm() {
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader><CardTitle>New Customer</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
@@ -35,7 +36,7 @@ export function CustomerForm() {
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Name *</FormLabel><FormControl><Input placeholder="Acme Corp" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="info@acme.com" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -43,7 +44,7 @@ export function CustomerForm() {
                 <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="+63 2 123 4567" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="taxId" render={({ field }) => (
                 <FormItem><FormLabel>TIN / Tax ID</FormLabel><FormControl><Input placeholder="123-456-789" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -51,7 +52,7 @@ export function CustomerForm() {
                 <FormItem><FormLabel>Website</FormLabel><FormControl><Input placeholder="acme.com" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="creditLimit" render={({ field }) => (
                 <FormItem><FormLabel>Credit Limit (₱)</FormLabel><FormControl><Input type="number" min="0" step="0.01" placeholder="500000" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -69,7 +70,7 @@ export function CustomerForm() {
                 <FormField control={form.control} name="billingLine2" render={({ field }) => (
                   <FormItem><FormLabel>Address Line 2</FormLabel><FormControl><Input placeholder="Suite 200" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="billingCity" render={({ field }) => (
                     <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Makati City" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -77,7 +78,7 @@ export function CustomerForm() {
                     <FormItem><FormLabel>Province</FormLabel><FormControl><Input placeholder="Metro Manila" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="billingPostalCode" render={({ field }) => (
                     <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="1200" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />

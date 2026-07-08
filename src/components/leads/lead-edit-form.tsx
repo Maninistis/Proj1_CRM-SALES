@@ -6,8 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { leadUpdateSchema, type LeadUpdateInput } from "@/features/lead/schemas/lead-update";
 import { updateLeadAction, type LeadActionState } from "@/features/lead/actions/lead-actions";
 import { LEAD_SOURCE_OPTIONS } from "@/features/lead/constants";
+import { buildItems, buildOptionItems } from "@/lib/select-helpers";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/forms/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,14 +58,14 @@ export function LeadEditForm({
   });
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-full">
       <CardHeader>
         <CardTitle>Edit Lead</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="firstName"
@@ -87,7 +89,7 @@ export function LeadEditForm({
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -111,7 +113,7 @@ export function LeadEditForm({
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="company"
@@ -135,14 +137,14 @@ export function LeadEditForm({
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="source"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Source</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select items={buildOptionItems(LEAD_SOURCE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         {LEAD_SOURCE_OPTIONS.map((opt) => (
@@ -160,7 +162,7 @@ export function LeadEditForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                    <Select items={buildItems(users)} value={field.value ?? undefined} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {users.map((u) => (

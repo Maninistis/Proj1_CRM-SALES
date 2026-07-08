@@ -1,75 +1,97 @@
+import { getDashboardData } from "@/features/dashboard/services/dashboard.service";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { PipelineView } from "@/components/dashboard/pipeline-view";
+import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { RecentActivities } from "@/components/dashboard/recent-activities";
+import { PendingInvoices } from "@/components/dashboard/pending-invoices";
+import { TopCustomers } from "@/components/dashboard/top-customers";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import { Notifications } from "@/components/dashboard/notifications";
+import { DateFilter } from "@/components/dashboard/date-filter";
+import { UserPlus, TrendingUp, Building2, ShoppingCart, Receipt, Wallet } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { hasPermission } from "@/lib/auth/permissions";
-import { Users, Shield, ScrollText, Settings } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { Suspense } from "react";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const range = (params.range as string) || "all";
+  const data = await getDashboardData(range as any);
   const session = await auth();
-  const permissions = session?.user?.permissions ?? [];
 
-  const cards = [
-    {
-      title: "Users",
-      href: "/users",
-      icon: Users,
-      permission: "users:read",
-      description: "Manage system users",
-    },
-    {
-      title: "Roles",
-      href: "/roles",
-      icon: Shield,
-      permission: "roles:read",
-      description: "Manage roles & permissions",
-    },
-    {
-      title: "Audit Logs",
-      href: "/audit-logs",
-      icon: ScrollText,
-      permission: "audit-logs:read",
-      description: "View change history",
-    },
-    {
-      title: "Settings",
-      href: "/settings",
-      icon: Settings,
-      permission: "settings:read",
-      description: "System configuration",
-    },
-  ];
+  if (!data) return <div className="p-6"><p className="text-sm text-[#787F87]">Loading...</p></div>;
 
-  const visibleCards = cards.filter((c) =>
-    hasPermission(permissions, c.permission)
-  );
+  const { kpis, pipeline, revenueTrend, recentActivities, pendingInvoices, topCustomers, notifications, permissions } = data;
+
+  const userIds = recentActivities?.map((a) => a.userId).filter(Boolean) ?? [];
+  const users = userIds.length > 0
+    ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } })
+    : [];
+  const userNames: Record<string, string> = {};
+  for (const u of users) userNames[u.id] = u.name;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`Welcome, ${session?.user?.name ?? "User"}`}
-        description="CRM + Sales Management System"
-      />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {visibleCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <a key={card.href} href={card.href}>
-              <Card className="transition-colors hover:border-primary">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {card.title}
-                  </CardTitle>
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">
-                    {card.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
-          );
-        })}
+    <div className="space-y-5">
+      {/* Compact header with date filter */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-xl font-bold text-[#103447]">
+            Welcome back, {session?.user?.name?.split(" ")[0] ?? "User"}
+          </h1>
+          <p className="text-sm text-[#787F87]">Here's what's happening with your business</p>
+        </div>
+        <Suspense fallback={null}>
+          <DateFilter />
+        </Suspense>
+      </div>
+
+      {/* Alert banner */}
+      {notifications && notifications.length > 0 && (
+        <Notifications notifications={notifications} />
+      )}
+
+      {/* KPI Cards — 6 columns on desktop */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {kpis.leads !== null && (
+          <KpiCard title="Total Leads" value={kpis.leads} description="all leads" icon={UserPlus} trend={kpis.leadsTrend} href="/leads" accent="#1A5366" />
+        )}
+        {kpis.activeOpportunities !== null && (
+          <KpiCard title="Active Opps" value={kpis.activeOpportunities} description={`₱${kpis.oppsValue.toLocaleString()} value`} icon={TrendingUp} href="/opportunities" accent="#2F6D7A" />
+        )}
+        {kpis.customers !== null && (
+          <KpiCard title="Customers" value={kpis.customers} description="active accounts" icon={Building2} trend={kpis.customersTrend} href="/customers" accent="#6B8A7A" />
+        )}
+        {kpis.salesOrders !== null && (
+          <KpiCard title="Sales Orders" value={kpis.salesOrders} description="in progress" icon={ShoppingCart} href="/sales-orders" accent="#8A6446" />
+        )}
+        {kpis.pendingInvoices !== null && (
+          <KpiCard title="Pending Inv." value={kpis.pendingInvoices} description="awaiting payment" icon={Receipt} href="/sales-invoices" accent="#E3B04B" />
+        )}
+        {kpis.totalRevenue !== null && (
+          <KpiCard title="Revenue" value={`₱${kpis.totalRevenue.toLocaleString()}`} description="collected" icon={Wallet} trend={kpis.revenueTrend} href="/payments" accent="#2E8B57" />
+        )}
+      </div>
+
+      {/* Pipeline + Revenue side by side */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PipelineView data={pipeline} />
+        <RevenueChart data={revenueTrend} />
+      </div>
+
+      {/* Pending Invoices + Recent Activities */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PendingInvoices invoices={pendingInvoices ?? null} />
+        <RecentActivities activities={recentActivities ?? null} userNames={userNames} />
+      </div>
+
+      {/* Top Customers + Quick Actions */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TopCustomers customers={topCustomers ?? null} />
+        <QuickActions permissions={permissions} />
       </div>
     </div>
   );

@@ -45,7 +45,7 @@ export function FormSelectField({
             {label}
             {required && <span className="text-destructive"> *</span>}
           </FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <Select value={field.value} onValueChange={field.onChange}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder={placeholder} />

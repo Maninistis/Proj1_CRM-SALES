@@ -61,12 +61,12 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
     .split("T")[0];
 
   return (
-    <Card className="max-w-4xl">
+    <Card className="max-w-full sm:max-w-4xl">
       <CardHeader><CardTitle>New Quotation</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Opportunity *</label>
                 <select
@@ -93,7 +93,7 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Valid Until *</label>
                 <Input type="date" name="validUntil" defaultValue={defaultValid} />
@@ -222,7 +222,7 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
               </div>
             </div>
 
-            <div className="ml-auto w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
+            <div className="ml-auto w-full sm:w-64 space-y-2 rounded-md border border-border bg-muted/50 p-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">₱{totals.subtotal.toLocaleString()}</span>
