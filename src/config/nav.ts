@@ -9,6 +9,7 @@ import {
   FileText,
   Package,
   Building2,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -68,6 +69,17 @@ export const navGroups: NavGroup[] = [
         href: "/customers",
         icon: Building2,
         permission: "customers:read",
+      },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      {
+        label: "Sales Orders",
+        href: "/sales-orders",
+        icon: ShoppingCart,
+        permission: "sales-orders:read",
       },
     ],
   },

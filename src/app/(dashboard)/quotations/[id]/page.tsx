@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/quotation/constants";
 import { QuotationDetailActions } from "@/components/quotations/quotation-detail-actions";
+import { ConvertQuotationToSOButton } from "@/components/sales-orders/convert-quotation-button";
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
 export default async function QuotationDetailPage({
@@ -39,6 +41,10 @@ export default async function QuotationDetailPage({
       </div>
 
       <QuotationDetailActions quoteId={id} status={quote.status} isDeleted={isDeleted} />
+
+      {quote.status === "ACCEPTED" && !isDeleted && (
+        <ConvertQuotationToSOButton quotationId={id} customers={await prisma.customer.findMany({ where: { deletedAt: null, status: "ACTIVE" }, select: { id: true, name: true }, orderBy: { name: "asc" } })} />
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
