@@ -99,6 +99,7 @@ export function LeadTable({
       totalPages={totalPages}
       searchPlaceholder="Search leads..."
       searchValue={search}
+      searchFields={(row) => `${row.firstName} ${row.lastName} | ${row.email ?? ""} | ${row.company ?? ""} | ${row.documentNo}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v);

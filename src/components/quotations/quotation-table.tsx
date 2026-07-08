@@ -98,6 +98,7 @@ export function QuotationTable({ data, page, pageSize, total, totalPages, search
       totalPages={totalPages}
       searchPlaceholder="Search quotations..."
       searchValue={search}
+      searchFields={(row) => `${row.subject} | ${row.documentNo} | ${row.opportunity?.title ?? ""}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v);

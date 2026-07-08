@@ -67,6 +67,7 @@ export function DNTable({ data, page, pageSize, total, totalPages, search }: Pro
       totalPages={totalPages}
       searchPlaceholder="Search delivery notes..."
       searchValue={search}
+      searchFields={(row) => `${row.documentNo} | ${row.salesOrder?.customer?.name ?? ""} | ${row.salesOrder?.documentNo ?? ""}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v); else url.searchParams.delete("search");

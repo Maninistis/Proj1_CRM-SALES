@@ -81,6 +81,7 @@ export function InvoiceTable({ data, page, pageSize, total, totalPages, search }
       totalPages={totalPages}
       searchPlaceholder="Search invoices..."
       searchValue={search}
+      searchFields={(row) => `${row.documentNo} | ${row.customer?.name ?? ""}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v); else url.searchParams.delete("search");

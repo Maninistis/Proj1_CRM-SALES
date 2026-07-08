@@ -125,6 +125,7 @@ export function OpportunityTable({
       totalPages={totalPages}
       searchPlaceholder="Search opportunities..."
       searchValue={search}
+      searchFields={(row) => `${row.title} | ${row.lead?.firstName ?? ""} ${row.lead?.lastName ?? ""} | ${row.documentNo}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v);

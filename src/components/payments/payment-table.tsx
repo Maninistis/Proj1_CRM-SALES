@@ -14,6 +14,7 @@ type Payment = {
   paymentMethod: string;
   status: string;
   paymentDate: string;
+  referenceNumber: string | null;
   salesInvoice: { documentNo: string } | null;
 };
 
@@ -76,6 +77,7 @@ export function PaymentTable({ data, page, pageSize, total, totalPages, search }
       totalPages={totalPages}
       searchPlaceholder="Search payments..."
       searchValue={search}
+      searchFields={(row) => `${row.documentNo} | ${row.customerName} | ${row.referenceNumber ?? ""} | ${row.salesInvoice?.documentNo ?? ""}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v); else url.searchParams.delete("search");

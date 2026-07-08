@@ -64,6 +64,7 @@ export function SOTable({ data, page, pageSize, total, totalPages, search }: Pro
       totalPages={totalPages}
       searchPlaceholder="Search sales orders..."
       searchValue={search}
+      searchFields={(row) => `${row.documentNo} | ${row.customer?.name ?? ""}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v); else url.searchParams.delete("search");

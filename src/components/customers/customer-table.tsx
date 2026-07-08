@@ -71,6 +71,7 @@ export function CustomerTable({ data, page, pageSize, total, totalPages, search 
       totalPages={totalPages}
       searchPlaceholder="Search customers..."
       searchValue={search}
+      searchFields={(row) => `${row.name} | ${row.email ?? ""} | ${row.phone ?? ""} | ${row.documentNo}`}
       onSearchChange={(v) => {
         const url = new URL(window.location.href);
         if (v) url.searchParams.set("search", v); else url.searchParams.delete("search");

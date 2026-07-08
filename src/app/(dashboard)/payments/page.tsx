@@ -34,6 +34,7 @@ export default async function PaymentsPage({
     id: p.id, documentNo: p.documentNo, customerName: p.customerName,
     amount: p.amount.toString(), paymentMethod: p.paymentMethod,
     status: p.status, paymentDate: p.paymentDate.toISOString(),
+    referenceNumber: p.referenceNumber,
     salesInvoice: p.salesInvoice ? { documentNo: p.salesInvoice.documentNo } : null,
   }));
 
