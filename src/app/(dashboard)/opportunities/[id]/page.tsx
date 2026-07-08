@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { STAGE_LABELS, STATUS_LABELS } from "@/features/opportunity/constants";
 import { OpportunityDetailActions } from "@/components/opportunities/opportunity-detail-actions";
 import { LeadConvertForm } from "@/components/opportunities/lead-convert-form";
+import { ConvertToCustomerButton } from "@/components/opportunities/convert-to-customer-button";
 import { findByIdIncludingDeleted as findLeadIncludingDeleted } from "@/features/lead/repositories/lead.repository";
 import { findByLeadId } from "@/features/opportunity/repositories/opportunity.repository";
 import { notFound } from "next/navigation";
@@ -51,6 +52,10 @@ export default async function OpportunityDetailPage({
       </div>
 
       <OpportunityDetailActions oppId={id} stage={opp.stage} status={opp.status} isDeleted={isDeleted} />
+
+      {opp.status === "CLOSED_WON" && !isDeleted && (
+        <ConvertToCustomerButton opportunityId={id} />
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

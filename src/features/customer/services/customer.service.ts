@@ -1,0 +1,247 @@
+import { auth } from "@/lib/auth/auth";
+import { audit } from "@/lib/audit";
+import { generateDocumentNo } from "@/lib/document-number";
+import { requirePermission } from "@/lib/auth/require-permission";
+import { NotFoundError, ConflictError } from "@/lib/errors";
+import { isValidTransition } from "../types";
+import { prisma } from "@/lib/prisma";
+import {
+  findMany,
+  findById,
+  findByIdIncludingDeleted,
+  findByEmail,
+  create,
+  update,
+  updateStatus,
+  softDelete,
+  restore,
+} from "../repositories/customer.repository";
+
+export async function list(params: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  status?: string;
+  deleted?: boolean;
+}) {
+  const session = await auth();
+  requirePermission(session, "customers:read");
+  return findMany(params);
+}
+
+export async function getById(id: string) {
+  const session = await auth();
+  requirePermission(session, "customers:read");
+  const customer = await findById(id);
+  if (!customer) throw new NotFoundError("Customer", id);
+  return customer;
+}
+
+export async function create_(input: {
+  name: string;
+  email?: string;
+  phone?: string;
+  taxId?: string;
+  website?: string;
+  creditLimit?: number;
+  paymentTerms: number;
+  billingLine1?: string;
+  billingLine2?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingPostalCode?: string;
+  billingCountry?: string;
+}) {
+  const session = await auth();
+  requirePermission(session, "customers:create");
+
+  if (input.email) {
+    const existing = await findByEmail(input.email);
+    if (existing) throw new ConflictError("A customer with this email already exists");
+  }
+
+  const documentNo = await generateDocumentNo("CUST");
+
+  const customer = await create({
+    documentNo,
+    name: input.name,
+    email: input.email,
+    phone: input.phone,
+    taxId: input.taxId,
+    website: input.website,
+    creditLimit: input.creditLimit,
+    paymentTerms: input.paymentTerms,
+    createdById: session!.user.userId,
+    billingAddress: input.billingLine1
+      ? {
+          line1: input.billingLine1,
+          line2: input.billingLine2,
+          city: input.billingCity || "",
+          state: input.billingState,
+          postalCode: input.billingPostalCode,
+          country: input.billingCountry || "Philippines",
+        }
+      : undefined,
+  });
+
+  await audit({
+    entityType: "Customer",
+    entityId: customer.id,
+    action: "CREATE",
+    userId: session!.user.userId,
+    newState: { documentNo: customer.documentNo, name: customer.name, status: customer.status },
+  });
+
+  return customer;
+}
+
+export async function convertFromOpportunity(opportunityId: string) {
+  const session = await auth();
+  requirePermission(session, "customers:create");
+
+  const opp = await prisma.opportunity.findFirst({
+    where: { id: opportunityId, deletedAt: null },
+    include: { lead: true },
+  });
+  if (!opp) throw new NotFoundError("Opportunity", opportunityId);
+  if (opp.status !== "CLOSED_WON") {
+    throw new ConflictError("Opportunity must be CLOSED_WON to create a customer");
+  }
+
+  const lead = opp.lead;
+  const customerName = lead?.company || `${lead?.firstName} ${lead?.lastName}`;
+
+  if (lead?.email) {
+    const existing = await findByEmail(lead.email);
+    if (existing) throw new ConflictError("A customer with this email already exists");
+  }
+
+  const documentNo = await generateDocumentNo("CUST");
+
+  const customer = await create({
+    documentNo,
+    name: customerName,
+    email: lead?.email || undefined,
+    phone: lead?.phone || undefined,
+    paymentTerms: 30,
+    createdById: session!.user.userId,
+  });
+
+  await audit({
+    entityType: "Customer",
+    entityId: customer.id,
+    action: "CREATE",
+    userId: session!.user.userId,
+    newState: {
+      documentNo: customer.documentNo,
+      name: customer.name,
+      convertedFromOpportunity: opp.documentNo,
+    },
+    metadata: { action: "opportunity_conversion", opportunityId },
+  });
+
+  return customer;
+}
+
+export async function update_(
+  id: string,
+  input: Partial<{
+    name: string;
+    email: string;
+    phone: string;
+    taxId: string;
+    website: string;
+    creditLimit: number;
+    paymentTerms: number;
+  }>
+) {
+  const session = await auth();
+  requirePermission(session, "customers:update");
+
+  const existing = await findById(id);
+  if (!existing) throw new NotFoundError("Customer", id);
+
+  if (input.email && input.email !== existing.email) {
+    const emailTaken = await findByEmail(input.email);
+    if (emailTaken) throw new ConflictError("Email already in use by another customer");
+  }
+
+  const customer = await update(id, input);
+
+  await audit({
+    entityType: "Customer",
+    entityId: id,
+    action: "UPDATE",
+    userId: session!.user.userId,
+    previousState: { name: existing.name, email: existing.email, phone: existing.phone },
+    newState: { name: customer.name, email: customer.email, phone: customer.phone },
+  });
+
+  return customer;
+}
+
+export async function transition(id: string, to: string) {
+  const session = await auth();
+  requirePermission(session, "customers:update");
+
+  const existing = await findById(id);
+  if (!existing) throw new NotFoundError("Customer", id);
+
+  if (!isValidTransition(existing.status, to)) {
+    throw new ConflictError(`Cannot transition from ${existing.status} to ${to}`);
+  }
+
+  const customer = await updateStatus(id, to);
+
+  await audit({
+    entityType: "Customer",
+    entityId: id,
+    action: "TRANSITION",
+    userId: session!.user.userId,
+    previousState: { status: existing.status },
+    newState: { status: to },
+  });
+
+  return customer;
+}
+
+export async function softDelete_(id: string) {
+  const session = await auth();
+  requirePermission(session, "customers:delete");
+
+  const existing = await findById(id);
+  if (!existing) throw new NotFoundError("Customer", id);
+
+  await softDelete(id);
+
+  await audit({
+    entityType: "Customer",
+    entityId: id,
+    action: "DELETE",
+    userId: session!.user.userId,
+    previousState: { documentNo: existing.documentNo, name: existing.name, status: existing.status },
+  });
+}
+
+export async function restore_(id: string) {
+  const session = await auth();
+  requirePermission(session, "customers:delete");
+
+  const existing = await findByIdIncludingDeleted(id);
+  if (!existing) throw new NotFoundError("Customer", id);
+  if (!existing.deletedAt) throw new ConflictError("Customer is not deleted");
+
+  const customer = await restore(id);
+
+  await audit({
+    entityType: "Customer",
+    entityId: id,
+    action: "UPDATE",
+    userId: session!.user.userId,
+    previousState: { deletedAt: existing.deletedAt },
+    newState: { deletedAt: null },
+    metadata: { action: "restore" },
+  });
+
+  return customer;
+}

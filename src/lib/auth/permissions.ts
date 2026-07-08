@@ -36,6 +36,7 @@ export const PERMISSIONS = [
   "customers:read",
   "customers:create",
   "customers:update",
+  "customers:delete",
 
   // Sales — Sales Orders
   "sales-orders:read",
@@ -130,6 +131,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "customers:read",
     "customers:create",
     "customers:update",
+    "customers:delete",
     "sales-orders:read",
     "sales-orders:create",
     "sales-orders:update",

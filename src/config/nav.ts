@@ -8,6 +8,7 @@ import {
   TrendingUp,
   FileText,
   Package,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -61,6 +62,12 @@ export const navGroups: NavGroup[] = [
         href: "/products",
         icon: Package,
         permission: "quotations:read",
+      },
+      {
+        label: "Customers",
+        href: "/customers",
+        icon: Building2,
+        permission: "customers:read",
       },
     ],
   },

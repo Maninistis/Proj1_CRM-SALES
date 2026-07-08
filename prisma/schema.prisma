@@ -33,6 +33,7 @@ model User {
   assignedOpportunities Opportunity[]   @relation("AssignedOpportunities")
   createdOpportunities  Opportunity[]   @relation("CreatedOpportunities")
   createdQuotations     Quotation[]     @relation("CreatedQuotations")
+  createdCustomers      Customer[]      @relation("CreatedCustomers")
 
   @@map("users")
   @@index([roleRoleId])
@@ -300,4 +301,72 @@ model Product {
   @@map("products")
   @@index([category])
   @@index([isActive])
+}
+
+// === CRM — CUSTOMER ===
+
+model Customer {
+  id           String    @id @default(cuid())
+  documentNo   String    @unique @map("document_no")
+  name         String
+  email        String?
+  phone        String?
+  taxId        String?   @map("tax_id")
+  website      String?
+  status       String    @default("NEW")
+  creditLimit  Decimal?  @db.Decimal(12, 2) @map("credit_limit")
+  paymentTerms Int       @default(30) @map("payment_terms")
+  createdById  String?   @map("created_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  createdBy  User?              @relation("CreatedCustomers", fields: [createdById], references: [id])
+  contacts   CustomerContact[]
+  addresses  CustomerAddress[]
+
+  @@map("customers")
+  @@index([status])
+  @@index([deletedAt])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model CustomerContact {
+  id          String    @id @default(cuid())
+  customerId  String    @map("customer_id")
+  name        String
+  email       String?
+  phone       String?
+  jobTitle    String?   @map("job_title")
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_contacts")
+  @@index([customerId])
+}
+
+model CustomerAddress {
+  id          String   @id @default(cuid())
+  customerId  String   @map("customer_id")
+  type        String
+  line1       String
+  line2       String?
+  city        String
+  state       String?
+  postalCode  String?   @map("postal_code")
+  country     String   @default("Philippines")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_addresses")
+  @@index([customerId])
+  @@index([type])
 }
