@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { OpportunityTable } from "@/components/opportunities/opportunity-table";
 import { STAGE_OPTIONS, STATUS_OPTIONS } from "@/features/opportunity/constants";
+import { cn } from "@/lib/utils";
 
 export default async function OpportunitiesPage({
   searchParams,
@@ -49,64 +50,115 @@ export default async function OpportunitiesPage({
 
   const isDeletedView = query.deleted === "true";
 
+  const buildUrl = (overrides: Record<string, string | undefined>) => {
+    const url = new URLSearchParams();
+    url.set("page", "1");
+    const merged = {
+      search: query.search,
+      status: query.status,
+      stage: query.stage,
+      deleted: query.deleted,
+      ...overrides,
+    };
+    for (const [k, v] of Object.entries(merged)) {
+      if (v) url.set(k, v);
+    }
+    return `?${url.toString()}`;
+  };
+
+  const chipClass = (isActive: boolean) =>
+    cn(
+      "rounded-md border px-3 py-1 text-sm transition-colors",
+      isActive
+        ? "border-[#103447] bg-[#103447] text-[#F1EBE3]"
+        : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+    );
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1440px] space-y-4">
       <PageHeader
         title={isDeletedView ? "Deleted Opportunities" : "Opportunities"}
-        description={isDeletedView ? "Restore deleted opportunities" : "Manage your sales opportunities"}
+        description={
+          isDeletedView
+            ? "Restore deleted opportunities"
+            : "Manage your sales opportunities"
+        }
       >
-        {!isDeletedView && (
-          <Link href="/opportunities/new" className={buttonVariants()}>New Opportunity</Link>
-        )}
+        <div className="flex items-center gap-2">
+          {!isDeletedView && (
+            <Link
+              href="/opportunities/new"
+              className={buttonVariants()}
+            >
+              New Opportunity
+            </Link>
+          )}
+          <Link
+            href={
+              isDeletedView
+                ? "/opportunities"
+                : "/opportunities?deleted=true"
+            }
+            className={buttonVariants({ variant: "outline" })}
+          >
+            {isDeletedView ? "Back" : "View Deleted"}
+          </Link>
+        </div>
       </PageHeader>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {!isDeletedView && (
-          <>
-            {STATUS_OPTIONS.map((opt) => {
-              const isActive = query.status === opt.value;
-              const url = new URLSearchParams();
-              url.set("page", "1");
-              if (!isActive) url.set("status", opt.value);
-              if (query.search) url.set("search", query.search);
-              if (query.stage) url.set("stage", query.stage);
-              return (
+      {!isDeletedView && (
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Status
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={buildUrl({ status: undefined })}
+                className={chipClass(!query.status)}
+              >
+                All
+              </Link>
+              {STATUS_OPTIONS.map((opt) => (
                 <Link
                   key={opt.value}
-                  href={`?${url.toString()}`}
-                  className={`rounded-md border px-3 py-1 text-sm ${isActive ? "bg-[#103447] text-[#F1EBE3] border-[#103447]" : "border-border hover:bg-muted"}`}
+                  href={buildUrl({
+                    status: query.status === opt.value ? undefined : opt.value,
+                  })}
+                  className={chipClass(query.status === opt.value)}
                 >
                   {opt.label}
                 </Link>
-              );
-            })}
-            <span className="mx-2 text-muted-foreground">|</span>
-            {STAGE_OPTIONS.map((opt) => {
-              const isActive = query.stage === opt.value;
-              const url = new URLSearchParams();
-              url.set("page", "1");
-              if (!isActive) url.set("stage", opt.value);
-              if (query.search) url.set("search", query.search);
-              if (query.status) url.set("status", query.status);
-              return (
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Pipeline Stage
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={buildUrl({ stage: undefined })}
+                className={chipClass(!query.stage)}
+              >
+                All
+              </Link>
+              {STAGE_OPTIONS.map((opt) => (
                 <Link
                   key={opt.value}
-                  href={`?${url.toString()}`}
-                  className={`rounded-md border px-3 py-1 text-sm ${isActive ? "bg-[#103447] text-[#F1EBE3] border-[#103447]" : "border-border hover:bg-muted"}`}
+                  href={buildUrl({
+                    stage: query.stage === opt.value ? undefined : opt.value,
+                  })}
+                  className={chipClass(query.stage === opt.value)}
                 >
                   {opt.label}
                 </Link>
-              );
-            })}
-          </>
-        )}
-        <Link
-          href={isDeletedView ? "/opportunities" : "/opportunities?deleted=true"}
-          className="ml-auto rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
-        >
-          {isDeletedView ? "← Back" : "View Deleted"}
-        </Link>
-      </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <OpportunityTable
         data={serializableData}

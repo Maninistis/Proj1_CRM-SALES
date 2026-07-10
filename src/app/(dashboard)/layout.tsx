@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
+import { getById as getRoleById } from "@/features/role/services/role.service";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 
@@ -14,11 +15,20 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const role = await getRoleById(session.user.roleId);
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar user={session.user} />
+      <Sidebar
+        user={session.user}
+        profile={{
+          name: session.user.name ?? null,
+          email: session.user.email ?? null,
+          roleName: role?.name ?? "User",
+        }}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
+        <Topbar permissions={session.user.permissions} />
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
           {children}
         </main>

@@ -38,6 +38,12 @@ export const navGroups: NavGroup[] = [
         icon: LayoutDashboard,
         permission: "dashboard:read",
       },
+      {
+        label: "Products & Services",
+        href: "/products",
+        icon: Package,
+        permission: "quotations:read",
+      },
     ],
   },
   {
@@ -59,12 +65,6 @@ export const navGroups: NavGroup[] = [
         label: "Quotations",
         href: "/quotations",
         icon: FileText,
-        permission: "quotations:read",
-      },
-      {
-        label: "Products",
-        href: "/products",
-        icon: Package,
         permission: "quotations:read",
       },
       {
@@ -104,33 +104,37 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
+];
+
+export type SystemNavItem = NavItem & { description: string };
+
+export const systemNavItems: SystemNavItem[] = [
   {
-    label: "System",
-    items: [
-      {
-        label: "Users",
-        href: "/users",
-        icon: Users,
-        permission: "users:read",
-      },
-      {
-        label: "Roles",
-        href: "/roles",
-        icon: Shield,
-        permission: "roles:read",
-      },
-      {
-        label: "Audit Logs",
-        href: "/audit-logs",
-        icon: ScrollText,
-        permission: "audit-logs:read",
-      },
-      {
-        label: "Settings",
-        href: "/settings",
-        icon: Settings,
-        permission: "settings:read",
-      },
-    ],
+    label: "Users",
+    href: "/users",
+    icon: Users,
+    permission: "users:read",
+    description: "Manage application users",
+  },
+  {
+    label: "Roles",
+    href: "/roles",
+    icon: Shield,
+    permission: "roles:read",
+    description: "Configure permissions",
+  },
+  {
+    label: "Audit Logs",
+    href: "/audit-logs",
+    icon: ScrollText,
+    permission: "audit-logs:read",
+    description: "Review system activity",
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
+    permission: "settings:read",
+    description: "Configure application",
   },
 ];
