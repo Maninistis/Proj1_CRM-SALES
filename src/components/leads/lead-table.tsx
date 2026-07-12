@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/badge";
 import { LEAD_STATUS_LABELS } from "@/features/lead/constants";
+import { DeleteLeadButton } from "@/components/leads/lead-action-buttons";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type Lead = {
@@ -69,6 +70,16 @@ const columns: ColumnDef<Lead>[] = [
         {row.original.assignedTo?.name ?? "—"}
       </span>
     ),
+  },
+  {
+    id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
+    cell: ({ row }) =>
+      row.original.status === "DISQUALIFIED" ? (
+        <div onClick={(e) => e.stopPropagation()}>
+          <DeleteLeadButton leadId={row.original.id} />
+        </div>
+      ) : null,
   },
 ];
 

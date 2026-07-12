@@ -13,6 +13,8 @@ import {
   updateStatus,
   softDelete,
   restore,
+  softDeleteByStatus,
+  countByStatus,
 } from "../repositories/lead.repository";
 
 export async function list(params: {
@@ -201,4 +203,25 @@ export async function restore_(id: string) {
   });
 
   return lead;
+}
+
+export async function deleteDisqualifiedLeads() {
+  const session = await auth();
+  requirePermission(session, "leads:delete");
+
+  const result = await softDeleteByStatus("DISQUALIFIED");
+
+  await audit({
+    entityType: "Lead",
+    entityId: "batch-disqualified",
+    action: "DELETE",
+    userId: session!.user.userId,
+    metadata: { action: "batch_delete_disqualified", count: result.count },
+  });
+
+  return result.count;
+}
+
+export async function getDisqualifiedCount() {
+  return countByStatus("DISQUALIFIED");
 }

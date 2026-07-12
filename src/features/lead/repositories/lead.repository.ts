@@ -142,4 +142,17 @@ export async function restore(id: string) {
   });
 }
 
+export async function softDeleteByStatus(status: string) {
+  return prisma.lead.updateMany({
+    where: { status, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+}
+
+export async function countByStatus(status: string) {
+  return prisma.lead.count({
+    where: { status, deletedAt: null },
+  });
+}
+
 export type LeadWithRelations = Prisma.LeadGetPayload<{ include: typeof leadInclude }>;

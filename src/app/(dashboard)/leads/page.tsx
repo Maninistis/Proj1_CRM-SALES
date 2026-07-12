@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { leadQuerySchema } from "@/features/lead/schemas/lead-query";
-import { list as listLeads } from "@/features/lead/services/lead.service";
+import { list as listLeads, getDisqualifiedCount } from "@/features/lead/services/lead.service";
 import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { LeadTable } from "@/components/leads/lead-table";
+import { DeleteDisqualifiedButton } from "@/components/leads/lead-action-buttons";
 import { LEAD_STATUS_OPTIONS } from "@/features/lead/constants";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ export default async function LeadsPage({
   }));
 
   const isDeletedView = query.deleted === "true";
+  const disqualifiedCount = isDeletedView ? 0 : await getDisqualifiedCount();
 
   const buildUrl = (overrides: Record<string, string | undefined>) => {
     const url = new URLSearchParams();
@@ -81,6 +83,12 @@ export default async function LeadsPage({
         <div className="flex items-center gap-2">
           {!isDeletedView && (
             <Link href="/leads/new" className={buttonVariants()}>New Lead</Link>
+          )}
+          {!isDeletedView && disqualifiedCount > 0 && (
+            <DeleteDisqualifiedButton
+              count={disqualifiedCount}
+              className={buttonVariants({ variant: "outline" })}
+            />
           )}
           <Link
             href={isDeletedView ? "/leads" : "/leads?deleted=true"}

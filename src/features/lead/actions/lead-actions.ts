@@ -10,6 +10,7 @@ import {
   transition,
   softDelete_,
   restore_,
+  deleteDisqualifiedLeads,
 } from "@/features/lead/services/lead.service";
 import { AppError } from "@/lib/errors";
 
@@ -90,6 +91,26 @@ export async function deleteLeadAction(id: string) {
   }
   revalidatePath("/leads");
   redirect("/leads");
+}
+
+export async function deleteLeadRowAction(id: string) {
+  try {
+    await softDelete_(id);
+  } catch (e) {
+    if (e instanceof AppError) return { success: false, error: e.message };
+    return { success: false, error: "Failed to delete lead" };
+  }
+  revalidatePath("/leads");
+}
+
+export async function deleteDisqualifiedLeadsAction() {
+  try {
+    await deleteDisqualifiedLeads();
+  } catch (e) {
+    if (e instanceof AppError) return { success: false, error: e.message };
+    return { success: false, error: "Failed to delete disqualified leads" };
+  }
+  revalidatePath("/leads");
 }
 
 export async function restoreLeadAction(id: string) {
