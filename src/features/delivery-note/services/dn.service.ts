@@ -58,8 +58,8 @@ export async function create_(input: {
     include: { items: { where: { deletedAt: null } } },
   });
   if (!so) throw new NotFoundError("Sales Order", input.salesOrderId);
-  if (!["CONFIRMED", "FULFILLING"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be CONFIRMED or FULFILLING to create a delivery note");
+  if (!["CONFIRMED", "FULFILLING", "INVOICED", "DELIVERED", "COMPLETED"].includes(so.status)) {
+    throw new ConflictError("Sales Order must be confirmed and invoiced before creating a delivery note");
   }
 
   for (const item of input.items) {
@@ -134,7 +134,7 @@ async function checkAndAutoTransitionSO(salesOrderId: string) {
   });
   if (!so) return;
 
-  if (so.status === "CONFIRMED") {
+  if (so.status === "CONFIRMED" || so.status === "INVOICED") {
     await prisma.salesOrder.update({
       where: { id: salesOrderId },
       data: { status: "FULFILLING" },

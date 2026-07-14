@@ -9,7 +9,9 @@ import { STATUS_LABELS } from "@/features/sales-order/constants";
 import { SODetailActions } from "@/components/sales-orders/so-detail-actions";
 import { GenerateInvoiceButton } from "@/components/invoices/generate-invoice-button";
 import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
+import { checkPaymentBeforeDelivery } from "@/lib/workflow/delivery-policy";
 import { notFound } from "next/navigation";
+import { Truck } from "lucide-react";
 
 export default async function SODetailPage({
   params,
@@ -22,6 +24,10 @@ export default async function SODetailPage({
 await assertOwnership(so);
 
   const isDeleted = !!so.deletedAt;
+
+  const deliveryCheck = !isDeleted && so.invoice
+    ? await checkPaymentBeforeDelivery(id)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -48,6 +54,12 @@ await assertOwnership(so);
       {!isDeleted && so.invoice && (
         <Link href={`/sales-invoices/${so.invoice.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           View Invoice ({so.invoice.documentNo})
+        </Link>
+      )}
+
+      {deliveryCheck && deliveryCheck.canDeliver && (
+        <Link href={`/delivery-notes/new?so=${id}`} className={buttonVariants({ variant: "default", size: "sm" })}>
+          <Truck className="mr-2 h-4 w-4" /> Create Delivery Note
         </Link>
       )}
 

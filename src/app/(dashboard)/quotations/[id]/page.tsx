@@ -11,6 +11,7 @@ import { AcceptedQuotationActions } from "@/components/quotations/accepted-quota
 import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { Printer, FileDown } from "lucide-react";
 
 export default async function QuotationDetailPage({
   params,
@@ -42,11 +43,23 @@ export default async function QuotationDetailPage({
   return (
     <div className="space-y-6">
       <PageHeader title={quote.subject} description={quote.documentNo}>
-        {!isDeleted && (quote.status === "DRAFT" || quote.status === "READY") && (
-          <Link href={`/quotations/${id}/edit`} className={buttonVariants({ variant: "outline" })}>
-            Edit
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {!isDeleted && (
+            <>
+              <Link href={`/quotations/${id}/print?auto=1`} target="_blank" className={buttonVariants({ variant: "default", size: "sm" })}>
+                <Printer className="mr-2 h-4 w-4" /> Print Quotation
+              </Link>
+              <a href={`/api/quotations/${id}/pdf`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <FileDown className="mr-2 h-4 w-4" /> Download PDF
+              </a>
+            </>
+          )}
+          {!isDeleted && (quote.status === "DRAFT" || quote.status === "READY") && (
+            <Link href={`/quotations/${id}/edit`} className={buttonVariants({ variant: "outline" })}>
+              Edit
+            </Link>
+          )}
+        </div>
       </PageHeader>
 
       <div className="flex items-center gap-3">

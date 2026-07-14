@@ -46,7 +46,8 @@ export async function createLeadAction(
   } catch (e) {
     if (e instanceof AppError) return { success: false, error: e.message };
     if (e instanceof Error && e.message === "NEXT_REDIRECT") throw e;
-    return { success: false, error: "Failed to create lead" };
+    const detail = e instanceof Error ? e.message : String(e);
+    return { success: false, error: `Failed to create lead: ${detail}` };
   }
 }
 

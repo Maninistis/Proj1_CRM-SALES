@@ -29,11 +29,11 @@ function parseItems(formData: FormData) {
 
 export async function createDNAction(_prev: DNActionState, formData: FormData): Promise<DNActionState> {
   const parsed = dnCreateSchema.safeParse({
-    salesOrderId: formData.get("salesOrderId"),
-    deliveryDate: formData.get("deliveryDate") || undefined,
-    carrier: formData.get("carrier") || undefined,
-    trackingNumber: formData.get("trackingNumber") || undefined,
-    notes: formData.get("notes") || undefined,
+    salesOrderId: formData.get("salesOrderId") ?? "",
+    deliveryDate: formData.get("deliveryDate") ?? "",
+    carrier: formData.get("carrier") ?? "",
+    trackingNumber: formData.get("trackingNumber") ?? "",
+    notes: formData.get("notes") ?? "",
     items: parseItems(formData),
   });
 
@@ -46,7 +46,8 @@ export async function createDNAction(_prev: DNActionState, formData: FormData): 
   } catch (e) {
     if (e instanceof AppError) return { success: false, error: e.message };
     if (e instanceof Error && e.message === "NEXT_REDIRECT") throw e;
-    return { success: false, error: "Failed to create delivery note" };
+    const detail = e instanceof Error ? e.message : String(e);
+    return { success: false, error: `Failed to create delivery note: ${detail}` };
   }
 }
 

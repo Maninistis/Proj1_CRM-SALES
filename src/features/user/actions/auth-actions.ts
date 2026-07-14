@@ -90,8 +90,8 @@ export async function logoutAction() {
 
 const QUICK_ACCOUNTS: Record<string, { email: string; password: string }> = {
   admin: { email: "admin@crm.local", password: "password123" },
-  manager: { email: "manager@crm.local", password: "password123" },
-  employee: { email: "employee@crm.local", password: "password123" },
+  manager: { email: "carlos.reyes@crm.local", password: "password123" },
+  employee: { email: "john.cruz@crm.local", password: "password123" },
 };
 
 export async function quickLoginAction(formData: FormData) {

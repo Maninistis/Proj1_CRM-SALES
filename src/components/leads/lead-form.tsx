@@ -33,7 +33,7 @@ export function LeadForm({ users, currentUserId, canAssign }: { users: UserOptio
       company: "",
       jobTitle: "",
       source: "OTHER",
-      assignedToId: canAssign ? "" : currentUserId,
+      assignedToId: currentUserId,
       notes: "",
     },
   });

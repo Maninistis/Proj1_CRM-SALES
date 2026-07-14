@@ -113,7 +113,7 @@ export function SOForm({ customers, defaultTaxRate, catalog, prefill }: { custom
                       return (
                         <tr key={field.id} className="border-t border-border">
                           <td className="p-2">
-                            <input type="hidden" {...form.register(`items.${i}.description`)} />
+                            <input type="hidden" name={`items.${i}.description`} value={item?.description ?? ""} />
                             <ProductDescriptionInput
                               catalog={catalog}
                               index={i}
