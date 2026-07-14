@@ -19,8 +19,10 @@ export async function findMany(params: {
   search?: string;
   status?: string;
   deleted?: boolean;
+  scopeUserId?: string;
 }) {
   const where: Prisma.QuotationWhereInput = {
+    ...(params.scopeUserId && { createdById: params.scopeUserId }),
     ...(params.deleted
       ? { deletedAt: { not: null } }
       : { deletedAt: null }),
@@ -50,9 +52,13 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string) {
+export async function findById(id: string, scopeUserId?: string) {
   return prisma.quotation.findFirst({
-    where: { id, deletedAt: null },
+    where: {
+      id,
+      deletedAt: null,
+      ...(scopeUserId && { createdById: scopeUserId }),
+    },
     include: quoteInclude,
   });
 }

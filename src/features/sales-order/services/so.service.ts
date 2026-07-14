@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { computeAllTotals } from "@/features/quotation/calculations";
 import { isValidTransition } from "../types";
@@ -26,13 +27,15 @@ export async function list(params: {
 }) {
   const session = await auth();
   requirePermission(session, "sales-orders:read");
-  return findMany(params);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  return findMany({ ...params, scopeUserId });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "sales-orders:read");
-  const so = await findById(id);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  const so = await findById(id, scopeUserId);
   if (!so) throw new NotFoundError("Sales Order", id);
   return so;
 }

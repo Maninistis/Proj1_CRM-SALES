@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/sales-order/repositories/so.repository";
 import { PageHeader } from "@/components/page-header";
@@ -18,6 +19,7 @@ export default async function SODetailPage({
   const { id } = await params;
   const so = await findByIdIncludingDeleted(id);
   if (!so) notFound();
+await assertOwnership(so);
 
   const isDeleted = !!so.deletedAt;
 

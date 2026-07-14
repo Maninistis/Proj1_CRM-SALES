@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type UserOption = { id: string; name: string };
 
-export function LeadForm({ users }: { users: UserOption[] }) {
+export function LeadForm({ users, currentUserId, canAssign }: { users: UserOption[]; currentUserId: string; canAssign: boolean }) {
   const [state, formAction] = useActionState<LeadActionState, FormData>(
     createLeadAction,
     { success: false }
@@ -33,7 +33,7 @@ export function LeadForm({ users }: { users: UserOption[] }) {
       company: "",
       jobTitle: "",
       source: "OTHER",
-      assignedToId: "",
+      assignedToId: canAssign ? "" : currentUserId,
       notes: "",
     },
   });
@@ -155,30 +155,34 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="assignedToId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned To *</FormLabel>
-                    <Select name={field.name} items={buildItems(users)} value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Unassigned" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {users.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {canAssign ? (
+                <FormField
+                  control={form.control}
+                  name="assignedToId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assigned To *</FormLabel>
+                      <Select name={field.name} items={buildItems(users)} value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Unassigned" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {users.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <input type="hidden" name="assignedToId" value={currentUserId} />
+              )}
             </div>
             <FormField
               control={form.control}

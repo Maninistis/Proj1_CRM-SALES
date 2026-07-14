@@ -137,5 +137,6 @@ export async function transitionQuotationAction(id: string, to: string) {
     return { success: false, error: "Failed to transition quotation" };
   }
   revalidatePath(`/quotations/${id}`);
-  redirect(`/quotations/${id}`);
+  const qs = to === "ACCEPTED" ? "?accepted=true" : "";
+  redirect(`/quotations/${id}${qs}`);
 }

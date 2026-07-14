@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
-import { getById as getRoleById } from "@/features/role/services/role.service";
+import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MessagingCenter } from "@/features/messaging/components/messaging-center";
@@ -16,7 +16,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const role = await getRoleById(session.user.roleId);
+  const role = await prisma.role.findUnique({
+    where: { id: session.user.roleId },
+    select: { name: true },
+  });
 
   return (
     <div className="flex h-screen overflow-hidden">

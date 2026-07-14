@@ -47,6 +47,11 @@ export async function createCustomerAction(
   try {
     const customer = await create_(parsed.data);
     revalidatePath("/customers");
+
+    const returnTo = formData.get("returnTo") as string | null;
+    if (returnTo) {
+      redirect(`${returnTo}?customerCreated=${customer.id}`);
+    }
     redirect(`/customers/${customer.id}`);
   } catch (e) {
     if (e instanceof AppError) return { success: false, error: e.message };

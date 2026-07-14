@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import {
   isValidStageTransition,
@@ -33,13 +34,15 @@ export async function list(params: {
 }) {
   const session = await auth();
   requirePermission(session, "opportunities:read");
-  return findMany(params);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  return findMany({ ...params, scopeUserId });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:read");
-  const opp = await findById(id);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  const opp = await findById(id, scopeUserId);
   if (!opp) throw new NotFoundError("Opportunity", id);
   return opp;
 }

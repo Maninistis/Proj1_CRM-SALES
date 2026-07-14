@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import {
@@ -23,13 +24,15 @@ export async function list(params: {
 }) {
   const session = await auth();
   requirePermission(session, "payments:read");
-  return findMany(params);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  return findMany({ ...params, scopeUserId });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "payments:read");
-  const payment = await findById(id);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  const payment = await findById(id, scopeUserId);
   if (!payment) throw new NotFoundError("Payment", id);
   return payment;
 }

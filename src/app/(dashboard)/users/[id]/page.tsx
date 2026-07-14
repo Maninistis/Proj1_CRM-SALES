@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { auth } from "@/lib/auth/auth";
+import { hasPermission } from "@/lib/auth/permissions";
 import { notFound } from "next/navigation";
 
 export default async function UserDetailPage({
@@ -12,6 +14,9 @@ export default async function UserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await auth();
+  const isAdmin = hasPermission(session!.user.permissions, "*");
+
   const user = await getUser(id);
 
   if (!user) notFound();
@@ -22,7 +27,9 @@ export default async function UserDetailPage({
         title={user.name}
         description={user.email}
       >
-        <Link href={`/users/${id}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
+        {isAdmin && (
+          <Link href={`/users/${id}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
+        )}
       </PageHeader>
       <Card className="max-w-2xl">
         <CardHeader>

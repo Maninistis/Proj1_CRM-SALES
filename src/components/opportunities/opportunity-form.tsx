@@ -25,7 +25,7 @@ type Prefill = {
   sourceLabel: string;
 };
 
-export function OpportunityForm({ leads, users, prefill }: { leads: LeadOption[]; users: UserOption[]; prefill?: Prefill }) {
+export function OpportunityForm({ leads, users, prefill, currentUserId, canAssign }: { leads: LeadOption[]; users: UserOption[]; prefill?: Prefill; currentUserId: string; canAssign: boolean }) {
   const [state, formAction] = useActionState<OpportunityActionState, FormData>(
     createOpportunityAction,
     { success: false }
@@ -39,7 +39,7 @@ export function OpportunityForm({ leads, users, prefill }: { leads: LeadOption[]
       description: "",
       estimatedValue: 0,
       expectedCloseDate: "",
-      assignedToId: prefill?.assignedToId ?? "",
+      assignedToId: canAssign ? (prefill?.assignedToId ?? "") : currentUserId,
     },
   });
 
@@ -114,24 +114,28 @@ export function OpportunityForm({ leads, users, prefill }: { leads: LeadOption[]
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="assignedToId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assigned To</FormLabel>
-                  <Select items={buildItems(users.map(u => ({ id: u.id, name: u.name })))} onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {users.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {canAssign ? (
+              <FormField
+                control={form.control}
+                name="assignedToId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned To</FormLabel>
+                    <Select items={buildItems(users.map(u => ({ id: u.id, name: u.name })))} onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <input type="hidden" name="assignedToId" value={currentUserId} />
+            )}
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
             <div className="flex gap-2">
               <Button type="submit">Create Opportunity</Button>

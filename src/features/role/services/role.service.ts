@@ -13,7 +13,7 @@ import {
   findAllPermissions,
 } from "../repositories/role.repository";
 
-const SYSTEM_ROLES = ["Admin", "Sales Manager", "Sales Rep", "Accountant"];
+const SYSTEM_ROLES = ["Admin", "Sales Manager", "Sales Rep"];
 
 export async function list(params: {
   page: number;

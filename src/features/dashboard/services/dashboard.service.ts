@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/auth/permissions";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 
 type DateRange = "today" | "7d" | "30d" | "month" | "year" | "all";
 
@@ -49,6 +50,7 @@ export async function getDashboardData(range: DateRange = "all") {
   const perms = session.user.permissions ?? [];
   const userId = session.user.userId;
   const isAdmin = perms.includes("*");
+  const scopeUserId = getScopeUserId(perms, userId);
   const startDate = getStartDate(range);
   const prevStart = getPrevStartDate(range, startDate);
 
@@ -75,29 +77,29 @@ export async function getDashboardData(range: DateRange = "all") {
     topCust,
     notifs,
   ] = await Promise.all([
-    canLeads ? prisma.lead.count({ where: { deletedAt: null, createdAt: { gte: startDate } } }) : null,
-    canLeads ? prisma.lead.count({ where: { deletedAt: null, createdAt: { gte: prevStart, lt: startDate } } }) : null,
-    canOpps ? prisma.opportunity.count({ where: { deletedAt: null, status: "OPEN" } }) : null,
-    canOpps ? prisma.opportunity.aggregate({ _sum: { estimatedValue: true }, where: { deletedAt: null, status: "OPEN" } }) : null,
-    canCust ? prisma.customer.count({ where: { deletedAt: null, status: "ACTIVE", createdAt: { gte: startDate } } }) : null,
-    canCust ? prisma.customer.count({ where: { deletedAt: null, status: "ACTIVE", createdAt: { gte: prevStart, lt: startDate } } }) : null,
-    canSO ? prisma.salesOrder.count({ where: { deletedAt: null, status: { in: ["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"] }, createdAt: { gte: startDate } } }) : null,
-    canInv ? prisma.salesInvoice.count({ where: { deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] } } }) : null,
-    canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: startDate } } }) : null,
-    canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: prevStart, lt: startDate } } }) : null,
-    getPipeline(perms, startDate, isAdmin, userId),
-    getRevenueTrend(perms, range),
+    canLeads ? prisma.lead.count({ where: { deletedAt: null, createdAt: { gte: startDate }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canLeads ? prisma.lead.count({ where: { deletedAt: null, createdAt: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canOpps ? prisma.opportunity.count({ where: { deletedAt: null, status: "OPEN", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canOpps ? prisma.opportunity.aggregate({ _sum: { estimatedValue: true }, where: { deletedAt: null, status: "OPEN", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canCust ? prisma.customer.count({ where: { deletedAt: null, status: "ACTIVE", createdAt: { gte: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canCust ? prisma.customer.count({ where: { deletedAt: null, status: "ACTIVE", createdAt: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canSO ? prisma.salesOrder.count({ where: { deletedAt: null, status: { in: ["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"] }, createdAt: { gte: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canInv ? prisma.salesInvoice.count({ where: { deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: startDate }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) } }) : null,
+    canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) } }) : null,
+    getPipeline(perms, startDate, isAdmin, userId, scopeUserId),
+    getRevenueTrend(perms, range, scopeUserId),
     canAudit ? prisma.auditLog.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
     }) : null,
     canInv ? prisma.salesInvoice.findMany({
-      where: { deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] } },
+      where: { deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) },
       take: 5, orderBy: { dueDate: "asc" },
       select: { id: true, documentNo: true, customerName: true, dueDate: true, grandTotal: true, paidAmount: true, status: true },
     }) : null,
-    canCust && canInv ? getTopCustomers(startDate) : null,
-    getNotifications(perms, startDate),
+    canCust && canInv ? getTopCustomers(startDate, scopeUserId) : null,
+    getNotifications(perms, startDate, scopeUserId),
   ]);
 
   const revThis = revenue?._sum.amount ? Number(revenue._sum.amount) : 0;
@@ -143,28 +145,43 @@ export async function getDashboardData(range: DateRange = "all") {
   };
 }
 
-async function getPipeline(perms: string[], startDate: Date, isAdmin: boolean, userId: string) {
-  const leadFilter = isAdmin ? {} : { assignedToId: userId };
+async function getPipeline(perms: string[], startDate: Date, isAdmin: boolean, userId: string, scopeUserId?: string) {
   const [leads, opps, quotes, customers, sos, invs, pays, dns] = await Promise.all([
-    hasPermission(perms, "leads:read") ? prisma.lead.count({ where: { deletedAt: null, ...leadFilter } }) : 0,
-    hasPermission(perms, "opportunities:read") ? prisma.opportunity.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "quotations:read") ? prisma.quotation.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "customers:read") ? prisma.customer.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "sales-orders:read") ? prisma.salesOrder.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "sales-invoices:read") ? prisma.salesInvoice.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "payments:read") ? prisma.payment.count({ where: { deletedAt: null } }) : 0,
-    hasPermission(perms, "sales-orders:read") ? prisma.deliveryNote.count({ where: { deletedAt: null } }) : 0,
+    hasPermission(perms, "leads:read")
+      ? prisma.lead.count({ where: { deletedAt: null, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } })
+      : 0,
+    hasPermission(perms, "opportunities:read")
+      ? prisma.opportunity.count({ where: { deletedAt: null, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } })
+      : 0,
+    hasPermission(perms, "quotations:read")
+      ? prisma.quotation.count({ where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) } })
+      : 0,
+    hasPermission(perms, "customers:read")
+      ? prisma.customer.count({ where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) } })
+      : 0,
+    hasPermission(perms, "sales-orders:read")
+      ? prisma.salesOrder.count({ where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) } })
+      : 0,
+    hasPermission(perms, "sales-invoices:read")
+      ? prisma.salesInvoice.count({ where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) } })
+      : 0,
+    hasPermission(perms, "payments:read")
+      ? prisma.payment.count({ where: { deletedAt: null, ...(scopeUserId ? { receivedById: scopeUserId } : {}) } })
+      : 0,
+    hasPermission(perms, "sales-orders:read")
+      ? prisma.deliveryNote.count({ where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) } })
+      : 0,
   ]);
   return { leads, opportunities: opps, quotations: quotes, customers, salesOrders: sos, invoices: invs, payments: pays, deliveryNotes: dns };
 }
 
-async function getRevenueTrend(perms: string[], range: DateRange) {
+async function getRevenueTrend(perms: string[], range: DateRange, scopeUserId?: string) {
   if (!hasPermission(perms, "payments:read")) return [];
 
   const now = new Date();
 
   const earliestPayment = await prisma.payment.findFirst({
-    where: { deletedAt: null, status: "RECEIVED" },
+    where: { deletedAt: null, status: "RECEIVED", ...(scopeUserId ? { receivedById: scopeUserId } : {}) },
     orderBy: { paymentDate: "asc" },
     select: { paymentDate: true },
   });
@@ -247,7 +264,7 @@ async function getRevenueTrend(perms: string[], range: DateRange) {
   }
 
   const payments = await prisma.payment.findMany({
-    where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: points[0].start } },
+    where: { deletedAt: null, status: "RECEIVED", paymentDate: { gte: points[0].start }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) },
     select: { amount: true, paymentDate: true },
   });
 
@@ -259,9 +276,9 @@ async function getRevenueTrend(perms: string[], range: DateRange) {
   });
 }
 
-async function getTopCustomers(startDate: Date) {
+async function getTopCustomers(startDate: Date, scopeUserId?: string) {
   const customers = await prisma.customer.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, ...(scopeUserId ? { createdById: scopeUserId } : {}) },
     select: {
       id: true, name: true,
       invoices: { where: { deletedAt: null }, select: { grandTotal: true, paidAmount: true } },
@@ -280,13 +297,13 @@ async function getTopCustomers(startDate: Date) {
     .slice(0, 5);
 }
 
-async function getNotifications(perms: string[], startDate: Date) {
+async function getNotifications(perms: string[], startDate: Date, scopeUserId?: string) {
   const notes: { type: string; message: string; severity: string; href?: string }[] = [];
   const [overdue, expiring, newLeads, recentPay] = await Promise.all([
-    hasPermission(perms, "sales-invoices:read") ? prisma.salesInvoice.count({ where: { deletedAt: null, status: "OVERDUE" } }) : 0,
-    hasPermission(perms, "quotations:read") ? prisma.quotation.count({ where: { deletedAt: null, status: "SENT", validUntil: { gte: new Date(), lt: new Date(Date.now() + 7 * 86400000) } } }) : 0,
-    hasPermission(perms, "leads:read") ? prisma.lead.count({ where: { deletedAt: null, status: "NEW" } }) : 0,
-    hasPermission(perms, "payments:read") ? prisma.payment.findFirst({ where: { deletedAt: null, status: "RECEIVED", createdAt: { gte: new Date(Date.now() - 86400000) } }, orderBy: { createdAt: "desc" }, select: { amount: true, customerName: true } }) : null,
+    hasPermission(perms, "sales-invoices:read") ? prisma.salesInvoice.count({ where: { deletedAt: null, status: "OVERDUE", ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : 0,
+    hasPermission(perms, "quotations:read") ? prisma.quotation.count({ where: { deletedAt: null, status: "SENT", validUntil: { gte: new Date(), lt: new Date(Date.now() + 7 * 86400000) }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : 0,
+    hasPermission(perms, "leads:read") ? prisma.lead.count({ where: { deletedAt: null, status: "NEW", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : 0,
+    hasPermission(perms, "payments:read") ? prisma.payment.findFirst({ where: { deletedAt: null, status: "RECEIVED", createdAt: { gte: new Date(Date.now() - 86400000) }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) }, orderBy: { createdAt: "desc" }, select: { amount: true, customerName: true } }) : null,
   ]);
   if (overdue > 0) notes.push({ type: "overdue", message: `${overdue} overdue invoice${overdue > 1 ? "s" : ""}`, severity: "error", href: "/sales-invoices" });
   if (expiring > 0) notes.push({ type: "expiring", message: `${expiring} quotation${expiring > 1 ? "s" : ""} expiring soon`, severity: "warning", href: "/quotations" });

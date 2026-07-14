@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/payment/repositories/payment.repository";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +21,7 @@ export default async function PaymentDetailPage({
   const { id } = await params;
   const payment = await findByIdIncludingDeleted(id);
   if (!payment) notFound();
+await assertOwnership(payment);
 
   const isDeleted = !!payment.deletedAt;
 

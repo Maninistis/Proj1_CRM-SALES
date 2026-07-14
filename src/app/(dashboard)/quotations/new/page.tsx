@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth/auth";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { QuotationForm } from "@/components/quotations/quotation-form";
 import { PageHeader } from "@/components/page-header";
 import { mapOpportunityToQuotation } from "@/lib/workflow/mappers";
@@ -12,9 +14,12 @@ export default async function NewQuotationPage({
   const params = await searchParams;
   const opportunityId = params.opportunityId as string | undefined;
 
+  const session = await auth();
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+
   const [opportunities, taxSetting, products, opportunity] = await Promise.all([
     prisma.opportunity.findMany({
-      where: { deletedAt: null, status: "CLOSED_WON" },
+      where: { deletedAt: null, status: "CLOSED_WON", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) },
       select: { id: true, title: true, documentNo: true },
       orderBy: { createdAt: "desc" },
     }),

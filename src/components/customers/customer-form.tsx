@@ -15,8 +15,10 @@ import { PrefillBanner } from "@/components/forms/prefill-banner";
 
 export function CustomerForm({
   prefill,
+  returnTo,
 }: {
   prefill?: { name?: string; email?: string; phone?: string; leadId?: string; sourceLabel?: string };
+  returnTo?: string;
 }) {
   const [state, formAction] = useActionState<CustomerActionState, FormData>(
     createCustomerAction,
@@ -42,6 +44,9 @@ export function CustomerForm({
           <form action={formAction} className="space-y-4">
             {prefill?.leadId && (
               <input type="hidden" name="leadId" value={prefill.leadId} />
+            )}
+            {returnTo && (
+              <input type="hidden" name="returnTo" value={returnTo} />
             )}
             {prefill?.sourceLabel && (
               <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Customer" />

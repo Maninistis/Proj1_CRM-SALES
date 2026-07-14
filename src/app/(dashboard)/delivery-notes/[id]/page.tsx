@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/delivery-note/repositories/dn.repository";
 import { PageHeader } from "@/components/page-header";
@@ -17,6 +18,7 @@ export default async function DNDetailPage({
   const { id } = await params;
   const dn = await findByIdIncludingDeleted(id);
   if (!dn) notFound();
+await assertOwnership(dn);
 
   const isDeleted = !!dn.deletedAt;
 

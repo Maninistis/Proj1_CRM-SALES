@@ -90,14 +90,12 @@ async function main() {
   const adminRole = (await prisma.role.findUnique({ where: { name: "Admin" } }))!;
   const repRole = (await prisma.role.findUnique({ where: { name: "Sales Rep" } }))!;
   const mgrRole = (await prisma.role.findUnique({ where: { name: "Sales Manager" } }))!;
-  const acctRole = (await prisma.role.findUnique({ where: { name: "Accountant" } }))!;
 
   const userData = [
     { name: "System Admin", email: "admin@crm.local", roleId: adminRole.id },
     { name: "John Cruz", email: "john.cruz@crm.local", roleId: repRole.id },
     { name: "Maria Santos", email: "maria.santos@crm.local", roleId: repRole.id },
     { name: "Carlos Reyes", email: "carlos.reyes@crm.local", roleId: mgrRole.id },
-    { name: "Diana Garcia", email: "diana.garcia@crm.local", roleId: acctRole.id },
   ];
   const userIds: Record<string,string> = {};
   for (const u of userData) {
@@ -105,7 +103,7 @@ async function main() {
     if (!user) user = await prisma.user.create({ data: { name: u.name, email: u.email, passwordHash: bcrypt.hashSync("password123", 12), roleRoleId: u.roleId, status: "ACTIVE" } });
     userIds[u.email] = user.id;
   }
-  const [adminId, rep1Id, rep2Id, mgrId, acctId] = ["admin@crm.local","john.cruz@crm.local","maria.santos@crm.local","carlos.reyes@crm.local","diana.garcia@crm.local"].map(e => userIds[e]);
+  const [adminId, rep1Id, rep2Id, mgrId] = ["admin@crm.local","john.cruz@crm.local","maria.santos@crm.local","carlos.reyes@crm.local"].map(e => userIds[e]);
   const repIds = [rep1Id, rep2Id];
   console.log(`Users: 5`);
 
@@ -294,7 +292,7 @@ async function main() {
         documentNo: await genDocNo("PAY"), salesInvoiceId: inv.id, customerId: so.custId, customerName: so.custName,
         amount: paidAmt, paymentMethod: methods[i%4], referenceNumber: `REF-${500000+i*99}`,
         paymentDate: pd, status: "RECEIVED", notes: paidAmt>=so.grandTotal?"Full payment.":"50% deposit.",
-        receivedById: i%2===0?acctId:adminId, createdAt: pd,
+        receivedById: i%2===0?mgrId:adminId, createdAt: pd,
       }});
       payCount++;
       monthlyRev.set(mk,(monthlyRev.get(mk)??0)+paidAmt);
@@ -306,7 +304,7 @@ async function main() {
       await prisma.payment.create({ data: {
         documentNo: await genDocNo("PAY"), salesInvoiceId: inv.id, customerId: so.custId, customerName: so.custName,
         amount: rem, paymentMethod: "BANK_TRANSFER", referenceNumber: `REF-${600000+i*77}`,
-        paymentDate: pd2, status: "RECEIVED", notes: "Balance payment.", receivedById: acctId, createdAt: pd2,
+        paymentDate: pd2, status: "RECEIVED", notes: "Balance payment.", receivedById: mgrId, createdAt: pd2,
       }});
       payCount++;
       monthlyRev.set(mk2,(monthlyRev.get(mk2)??0)+rem);
@@ -317,11 +315,11 @@ async function main() {
 
   const entities = ["Lead","Opportunity","Quotation","Customer","SalesOrder","SalesInvoice","Payment"];
   const actions = ["CREATE","UPDATE","DELETE","TRANSITION"];
-  const uids = [adminId,rep1Id,rep2Id,mgrId,acctId];
+  const uids = [adminId,rep1Id,rep2Id,mgrId];
   for (let i = 0; i < 200; i++) {
     await prisma.auditLog.create({ data: {
       entityType: entities[i%entities.length], entityId: `seed-${i}`,
-      action: actions[i%actions.length], userId: uids[i%5],
+      action: actions[i%actions.length], userId: uids[i%uids.length],
       newState: { note: `Demo ${actions[i%actions.length]} ${entities[i%entities.length]}` },
       createdAt: daysAgo(Math.floor((i/200)*170)),
     }});

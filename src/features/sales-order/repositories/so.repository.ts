@@ -16,8 +16,10 @@ export async function findMany(params: {
   search?: string;
   status?: string;
   deleted?: boolean;
+  scopeUserId?: string;
 }) {
   const where: Prisma.SalesOrderWhereInput = {
+    ...(params.scopeUserId && { createdById: params.scopeUserId }),
     ...(params.deleted ? { deletedAt: { not: null } } : { deletedAt: null }),
     ...(params.status && { status: params.status }),
     ...(params.search && {
@@ -41,9 +43,13 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string) {
+export async function findById(id: string, scopeUserId?: string) {
   return prisma.salesOrder.findFirst({
-    where: { id, deletedAt: null },
+    where: {
+      id,
+      deletedAt: null,
+      ...(scopeUserId && { createdById: scopeUserId }),
+    },
     include: soInclude,
   });
 }

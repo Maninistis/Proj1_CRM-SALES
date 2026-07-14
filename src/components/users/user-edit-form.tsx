@@ -25,9 +25,11 @@ type UserFormData = {
 export function UserEditForm({
   user,
   roles,
+  canEditRole = true,
 }: {
   user: UserFormData;
   roles: RoleWithPermissions[];
+  canEditRole?: boolean;
 }) {
   const [state, formAction] = useActionState<UserActionState, FormData>(
     (prev, fd) => updateUserAction(user.id, prev, fd),
@@ -78,51 +80,71 @@ export function UserEditForm({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="roleRoleId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role *</FormLabel>
-                  <Select items={buildOptionItems(roles.map(r => ({value: r.id, label: r.name})))} value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
+            {canEditRole ? (
+              <FormField
+                control={form.control}
+                name="roleRoleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role *</FormLabel>
+                    <Select items={buildOptionItems(roles.map(r => ({value: r.id, label: r.name})))} value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <>
+                <input type="hidden" name="roleRoleId" value={user.roleRoleId} />
+                <div>
+                  <FormLabel>Role</FormLabel>
+                  <p className="text-sm text-muted-foreground">{user.role.name}</p>
+                </div>
+              </>
+            )}
+            {canEditRole ? (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select items={{"ACTIVE": "Active", "INACTIVE": "Inactive"}} value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <>
+                <input type="hidden" name="status" value={user.status} />
+                <div>
                   <FormLabel>Status</FormLabel>
-                  <Select items={{"ACTIVE": "Active", "INACTIVE": "Inactive"}} value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <p className="text-sm text-muted-foreground">{user.status}</p>
+                </div>
+              </>
+            )}
             {state.error && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}

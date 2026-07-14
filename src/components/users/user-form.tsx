@@ -48,9 +48,13 @@ function passwordStrength(pwd: string): { score: number; label: string; color: s
 export function UserForm({
   roles,
   managers,
+  lockRoleToRep = false,
+  repRoleId,
 }: {
   roles: RoleWithPermissions[];
   managers: ManagerOption[];
+  lockRoleToRep?: boolean;
+  repRoleId?: string;
 }) {
   const [state, formAction] = useActionState<UserActionState, FormData>(
     createUserAction,
@@ -72,7 +76,7 @@ export function UserForm({
       image: "",
       password: "",
       confirmPassword: "",
-      roleRoleId: "",
+      roleRoleId: lockRoleToRep ? (repRoleId ?? "") : "",
       status: "ACTIVE",
       managerId: "",
       requirePasswordChange: false,
@@ -186,6 +190,22 @@ export function UserForm({
               {/* Section 2: Account Information */}
               <div className="border-t pt-6">
                 <h3 className="mb-4 text-sm font-semibold text-[#103447]">Account Information</h3>
+                {lockRoleToRep ? (
+                  <>
+                    <input type="hidden" name="roleRoleId" value={repRoleId ?? ""} />
+                    <input type="hidden" name="status" value="ACTIVE" />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="mb-1 text-sm font-medium">Role</p>
+                        <p className="text-sm text-muted-foreground">Sales Representative</p>
+                      </div>
+                      <div>
+                        <p className="mb-1 text-sm font-medium">Status</p>
+                        <p className="text-sm text-muted-foreground">Active</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="roleRoleId" render={({ field }) => (
                     <FormItem>
@@ -218,6 +238,7 @@ export function UserForm({
                     </FormItem>
                   )} />
                 </div>
+                )}
 
                 <div className="mt-4 grid sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="password" render={({ field }) => (

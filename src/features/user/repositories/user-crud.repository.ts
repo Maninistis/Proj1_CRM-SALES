@@ -11,9 +11,11 @@ export async function findMany(params: {
   pageSize: number;
   search?: string;
   status?: string;
+  managerId?: string;
 }) {
   const where: Prisma.UserWhereInput = {
     ...(params.status && { status: params.status }),
+    ...(params.managerId && { managerId: params.managerId }),
     ...(params.search && {
       OR: [
         { name: { contains: params.search } },
@@ -77,6 +79,9 @@ export async function update(
     email: string;
     roleRoleId: string;
     status: string;
+    phone: string;
+    image: string;
+    passwordHash: string;
   }>
 ) {
   return prisma.user.update({

@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/sales-invoice/repositories/invoice.repository";
 import { PageHeader } from "@/components/page-header";
@@ -19,6 +20,7 @@ export default async function InvoiceDetailPage({
   const { id } = await params;
   const inv = await findByIdIncludingDeleted(id);
   if (!inv) notFound();
+await assertOwnership(inv);
 
   const isDeleted = !!inv.deletedAt;
   const balance = Number(inv.grandTotal) - Number(inv.paidAmount);

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError } from "@/lib/errors";
 import { isValidTransition } from "../types";
 import { prisma } from "@/lib/prisma";
@@ -26,13 +27,15 @@ export async function list(params: {
 }) {
   const session = await auth();
   requirePermission(session, "customers:read");
-  return findMany(params);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  return findMany({ ...params, scopeUserId });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "customers:read");
-  const customer = await findById(id);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  const customer = await findById(id, scopeUserId);
   if (!customer) throw new NotFoundError("Customer", id);
   return customer;
 }
@@ -59,6 +62,13 @@ export async function create_(input: {
   if (input.email) {
     const existing = await findByEmail(input.email);
     if (existing) throw new ConflictError("A customer with this email already exists");
+  }
+
+  if (input.leadId) {
+    const existingByLead = await prisma.customer.findFirst({
+      where: { leadId: input.leadId, deletedAt: null },
+    });
+    if (existingByLead) throw new ConflictError("A customer already exists for this lead");
   }
 
   const documentNo = await generateDocumentNo("CUST");

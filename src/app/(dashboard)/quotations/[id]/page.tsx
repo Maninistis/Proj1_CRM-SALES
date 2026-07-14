@@ -1,5 +1,5 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
-import { getById as getQuotation } from "@/features/quotation/services/quotation.service";
 import { findByIdIncludingDeleted } from "@/features/quotation/repositories/quotation.repository";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,22 +7,37 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/quotation/constants";
 import { QuotationDetailActions } from "@/components/quotations/quotation-detail-actions";
-import { ConvertQuotationToSOButton } from "@/components/sales-orders/convert-quotation-button";
+import { AcceptedQuotationActions } from "@/components/quotations/accepted-quotation-actions";
 import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
 export default async function QuotationDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const justAccepted = sp.accepted === "true";
+  const customerCreatedId = sp.customerCreated as string | undefined;
+
   const quote = await findByIdIncludingDeleted(id);
   if (!quote) notFound();
+  await assertOwnership(quote);
 
   const isDeleted = !!quote.deletedAt;
-  const pipelineHref = quote.opportunity ? pipelineUrl({ leadId: quote.opportunity.leadId }) : null;
+  const leadId = quote.opportunity?.leadId ?? null;
+  const pipelineHref = leadId ? pipelineUrl({ leadId }) : null;
+
+  const existingCustomer = leadId
+    ? await prisma.customer.findFirst({
+        where: { leadId, deletedAt: null },
+        select: { id: true, name: true },
+      })
+    : null;
 
   return (
     <div className="space-y-6">
@@ -45,7 +60,13 @@ export default async function QuotationDetailPage({
       <QuotationDetailActions quoteId={id} status={quote.status} isDeleted={isDeleted} />
 
       {quote.status === "ACCEPTED" && !isDeleted && (
-        <ConvertQuotationToSOButton quotationId={id} customers={await prisma.customer.findMany({ where: { deletedAt: null, status: "ACTIVE" }, select: { id: true, name: true }, orderBy: { name: "asc" } })} />
+        <AcceptedQuotationActions
+          quotationId={id}
+          leadId={leadId}
+          hasCustomer={!!existingCustomer}
+          justAccepted={justAccepted}
+          customerCreatedId={customerCreatedId}
+        />
       )}
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">

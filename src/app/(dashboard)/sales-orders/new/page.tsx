@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth/auth";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { SOForm } from "@/components/sales-orders/so-form";
 import { PageHeader } from "@/components/page-header";
 import { mapQuotationToSalesOrder } from "@/lib/workflow/mappers";
@@ -12,9 +14,12 @@ export default async function NewSOPage({
   const params = await searchParams;
   const quotationId = params.quotationId as string | undefined;
 
+  const session = await auth();
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+
   const [customers, taxSetting, products, quotation] = await Promise.all([
     prisma.customer.findMany({
-      where: { deletedAt: null, status: "ACTIVE" },
+      where: { deletedAt: null, status: "ACTIVE", ...(scopeUserId ? { createdById: scopeUserId } : {}) },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -29,7 +34,7 @@ export default async function NewSOPage({
           where: { id: quotationId, deletedAt: null },
           include: {
             items: { where: { deletedAt: null } },
-            opportunity: { include: { lead: { include: { customer: true } } } },
+            opportunity: { include: { lead: true } },
           },
         })
       : Promise.resolve(null),
@@ -38,7 +43,14 @@ export default async function NewSOPage({
   const defaultTaxRate = taxSetting ? Number(taxSetting.value) : 0.12;
   const catalog = products.map((p) => ({ id: p.id, name: p.name, defaultPrice: Number(p.defaultPrice), category: p.category }));
 
-  const resolvedCustomer = quotation?.opportunity?.lead?.customer ?? null;
+  const activeCustomer = quotation?.opportunity?.lead
+    ? await prisma.customer.findFirst({
+        where: { leadId: quotation.opportunity.lead.id, deletedAt: null },
+        select: { id: true, name: true },
+      })
+    : null;
+
+  const resolvedCustomer = activeCustomer;
 
   const prefill = quotation
     ? {

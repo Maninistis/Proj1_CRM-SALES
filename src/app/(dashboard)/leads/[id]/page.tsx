@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { getById as getLead } from "@/features/lead/services/lead.service";
 import { findByIdIncludingDeleted } from "@/features/lead/repositories/lead.repository";
@@ -23,6 +24,7 @@ export default async function LeadDetailPage({
 
   const lead = await findByIdIncludingDeleted(id);
   if (!lead) notFound();
+await assertOwnership(lead);
 
   const isDeleted = !!lead.deletedAt;
 

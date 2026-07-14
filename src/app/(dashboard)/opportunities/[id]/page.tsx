@@ -1,3 +1,4 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
 import Link from "next/link";
 import { getById as getOpportunity } from "@/features/opportunity/services/opportunity.service";
 import { findByIdIncludingDeleted } from "@/features/opportunity/repositories/opportunity.repository";
@@ -22,6 +23,7 @@ export default async function OpportunityDetailPage({
   const { id } = await params;
   const opp = await findByIdIncludingDeleted(id);
   if (!opp) notFound();
+await assertOwnership(opp);
 
   const isDeleted = !!opp.deletedAt;
   const pipelineHref = pipelineUrl({ leadId: opp.lead.id });

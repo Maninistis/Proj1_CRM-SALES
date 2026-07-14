@@ -87,3 +87,20 @@ export async function logoutAction() {
   await signOut({ redirect: false });
   redirect("/login");
 }
+
+const QUICK_ACCOUNTS: Record<string, { email: string; password: string }> = {
+  admin: { email: "admin@crm.local", password: "password123" },
+  manager: { email: "manager@crm.local", password: "password123" },
+  employee: { email: "employee@crm.local", password: "password123" },
+};
+
+export async function quickLoginAction(formData: FormData) {
+  const role = String(formData.get("role") ?? "");
+  const account = QUICK_ACCOUNTS[role];
+  if (!account) return;
+  await signIn("credentials", {
+    email: account.email,
+    password: account.password,
+    redirectTo: "/dashboard",
+  });
+}

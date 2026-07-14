@@ -1,3 +1,6 @@
+import { assertOwnership } from "@/lib/auth/owner-check";
+import { auth } from "@/lib/auth/auth";
+import { hasPermission } from "@/lib/auth/permissions";
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/customer/repositories/customer.repository";
 import { PageHeader } from "@/components/page-header";
@@ -17,6 +20,10 @@ export default async function CustomerDetailPage({
   const { id } = await params;
   const customer = await findByIdIncludingDeleted(id);
   if (!customer) notFound();
+await assertOwnership(customer);
+
+  const session = await auth();
+  const canDelete = hasPermission(session!.user.permissions, "customers:delete");
 
   const isDeleted = !!customer.deletedAt;
   const billingAddress = customer.addresses.find((a) => a.type === "BILLING");
@@ -44,7 +51,7 @@ export default async function CustomerDetailPage({
         {isDeleted && <Badge variant="destructive">Deleted</Badge>}
       </div>
 
-      <CustomerDetailActions customerId={id} status={customer.status} isDeleted={isDeleted} />
+      <CustomerDetailActions customerId={id} status={customer.status} isDeleted={isDeleted} canDelete={canDelete} />
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>

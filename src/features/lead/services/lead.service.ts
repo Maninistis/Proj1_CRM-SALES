@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError } from "@/lib/errors";
 import { isValidTransition } from "../types";
 import {
@@ -27,13 +28,15 @@ export async function list(params: {
 }) {
   const session = await auth();
   requirePermission(session, "leads:read");
-  return findMany(params);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  return findMany({ ...params, scopeUserId });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "leads:read");
-  const lead = await findById(id);
+  const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
+  const lead = await findById(id, scopeUserId);
   if (!lead) throw new NotFoundError("Lead", id);
   return lead;
 }

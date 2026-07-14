@@ -17,8 +17,12 @@ export async function findMany(params: {
   stage?: string;
   status?: string;
   deleted?: boolean;
+  scopeUserId?: string;
 }) {
   const where: Prisma.OpportunityWhereInput = {
+    ...(params.scopeUserId && {
+      OR: [{ assignedToId: params.scopeUserId }, { createdById: params.scopeUserId }],
+    }),
     ...(params.deleted
       ? { deletedAt: { not: null } }
       : { deletedAt: null }),
@@ -48,9 +52,15 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string) {
+export async function findById(id: string, scopeUserId?: string) {
   return prisma.opportunity.findFirst({
-    where: { id, deletedAt: null },
+    where: {
+      id,
+      deletedAt: null,
+      ...(scopeUserId && {
+        OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }],
+      }),
+    },
     include: oppInclude,
   });
 }

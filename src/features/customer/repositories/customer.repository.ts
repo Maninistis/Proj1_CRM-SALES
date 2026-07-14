@@ -15,8 +15,10 @@ export async function findMany(params: {
   search?: string;
   status?: string;
   deleted?: boolean;
+  scopeUserId?: string;
 }) {
   const where: Prisma.CustomerWhereInput = {
+    ...(params.scopeUserId && { createdById: params.scopeUserId }),
     ...(params.deleted ? { deletedAt: { not: null } } : { deletedAt: null }),
     ...(params.status && { status: params.status }),
     ...(params.search && {
@@ -43,9 +45,13 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string) {
+export async function findById(id: string, scopeUserId?: string) {
   return prisma.customer.findFirst({
-    where: { id, deletedAt: null },
+    where: {
+      id,
+      deletedAt: null,
+      ...(scopeUserId && { createdById: scopeUserId }),
+    },
     include: customerInclude,
   });
 }
@@ -151,7 +157,7 @@ export async function updateStatus(id: string, status: string) {
 export async function softDelete(id: string) {
   return prisma.customer.update({
     where: { id },
-    data: { deletedAt: new Date() },
+    data: { deletedAt: new Date(), leadId: null },
   });
 }
 

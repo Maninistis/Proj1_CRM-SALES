@@ -12,9 +12,10 @@ type Props = {
   customerId: string;
   status: string;
   isDeleted: boolean;
+  canDelete?: boolean;
 };
 
-export function CustomerDetailActions({ customerId, status, isDeleted }: Props) {
+export function CustomerDetailActions({ customerId, status, isDeleted, canDelete = true }: Props) {
   if (isDeleted) {
     return (
       <form action={async () => { await restoreCustomerAction(customerId); }}>
@@ -58,11 +59,13 @@ export function CustomerDetailActions({ customerId, status, isDeleted }: Props) 
         </form>
       )}
 
-      <form action={async () => { await deleteCustomerAction(customerId); }}>
-        <Button type="submit" variant="destructive" size="sm">
-          <Trash2 className="mr-2 h-4 w-4" /> Delete
-        </Button>
-      </form>
+      {canDelete && (
+        <form action={async () => { await deleteCustomerAction(customerId); }}>
+          <Button type="submit" variant="destructive" size="sm">
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
