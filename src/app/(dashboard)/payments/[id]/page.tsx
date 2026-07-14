@@ -51,13 +51,7 @@ await assertOwnership(payment);
         )}
       </PageHeader>
 
-      <div className="flex items-center gap-3">
-        <Badge variant={payment.status === "RECEIVED" ? "default" : payment.status === "FAILED" || payment.status === "CANCELLED" ? "destructive" : "secondary"}>
-          {STATUS_LABELS[payment.status] ?? payment.status}
-        </Badge>
-        <span className="text-lg font-bold text-green-600">₱{Number(payment.amount).toLocaleString()}</span>
-        {isDeleted && <Badge variant="destructive">Deleted</Badge>}
-      </div>
+      {isDeleted && <Badge variant="destructive">Deleted</Badge>}
 
       <PaymentDetailActions
         paymentId={id}
