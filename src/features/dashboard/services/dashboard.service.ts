@@ -145,14 +145,17 @@ export async function getDashboardData(range: DateRange = "all") {
 
 async function getPipeline(perms: string[], startDate: Date, isAdmin: boolean, userId: string) {
   const leadFilter = isAdmin ? {} : { assignedToId: userId };
-  const [leads, opps, quotes, customers, sos] = await Promise.all([
+  const [leads, opps, quotes, customers, sos, invs, pays, dns] = await Promise.all([
     hasPermission(perms, "leads:read") ? prisma.lead.count({ where: { deletedAt: null, ...leadFilter } }) : 0,
     hasPermission(perms, "opportunities:read") ? prisma.opportunity.count({ where: { deletedAt: null } }) : 0,
     hasPermission(perms, "quotations:read") ? prisma.quotation.count({ where: { deletedAt: null } }) : 0,
     hasPermission(perms, "customers:read") ? prisma.customer.count({ where: { deletedAt: null } }) : 0,
     hasPermission(perms, "sales-orders:read") ? prisma.salesOrder.count({ where: { deletedAt: null } }) : 0,
+    hasPermission(perms, "sales-invoices:read") ? prisma.salesInvoice.count({ where: { deletedAt: null } }) : 0,
+    hasPermission(perms, "payments:read") ? prisma.payment.count({ where: { deletedAt: null } }) : 0,
+    hasPermission(perms, "sales-orders:read") ? prisma.deliveryNote.count({ where: { deletedAt: null } }) : 0,
   ]);
-  return { leads, opportunities: opps, quotations: quotes, customers, salesOrders: sos };
+  return { leads, opportunities: opps, quotations: quotes, customers, salesOrders: sos, invoices: invs, payments: pays, deliveryNotes: dns };
 }
 
 async function getRevenueTrend(perms: string[], range: DateRange) {

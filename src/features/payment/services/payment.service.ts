@@ -40,6 +40,7 @@ export async function create_(input: {
   paymentMethod: string;
   referenceNumber?: string;
   paymentDate: string;
+  proofImageUrl?: string;
   notes?: string;
 }) {
   const session = await auth();
@@ -82,6 +83,7 @@ export async function create_(input: {
     paymentMethod: input.paymentMethod,
     referenceNumber: input.referenceNumber,
     paymentDate: new Date(input.paymentDate),
+    proofImageUrl: input.proofImageUrl || null,
     notes: input.notes,
     receivedById: session!.user.userId,
   });

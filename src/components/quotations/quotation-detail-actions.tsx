@@ -4,10 +4,9 @@ import {
   restoreQuotationAction,
   deleteQuotationAction,
   transitionQuotationAction,
-  duplicateQuotationAction,
 } from "@/features/quotation/actions/quotation-actions";
 import { Button } from "@/components/ui/button";
-import { Trash2, RotateCcw, Copy, Send, Check, X, FileText } from "lucide-react";
+import { Trash2, RotateCcw, Send, Check, X, FileText } from "lucide-react";
 
 type Props = {
   quoteId: string;
@@ -70,12 +69,6 @@ export function QuotationDetailActions({ quoteId, status, isDeleted }: Props) {
           <Button type="submit" variant="outline" size="sm">Revise (Back to Draft)</Button>
         </form>
       )}
-
-      <form action={async () => { await duplicateQuotationAction(quoteId); }}>
-        <Button type="submit" variant="outline" size="sm">
-          <Copy className="mr-2 h-4 w-4" /> Duplicate
-        </Button>
-      </form>
 
       <form action={async () => { await deleteQuotationAction(quoteId); }}>
         <Button type="submit" variant="destructive" size="sm">

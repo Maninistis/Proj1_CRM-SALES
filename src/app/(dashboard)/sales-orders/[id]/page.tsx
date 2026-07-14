@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/sales-order/constants";
 import { SODetailActions } from "@/components/sales-orders/so-detail-actions";
-import { CreateDNFromSOButton } from "@/components/sales-orders/create-dn-button";
 import { GenerateInvoiceButton } from "@/components/invoices/generate-invoice-button";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { notFound } from "next/navigation";
 
 export default async function SODetailPage({
@@ -39,12 +39,14 @@ export default async function SODetailPage({
 
       <SODetailActions soId={id} status={so.status} isDeleted={isDeleted} />
 
-      {!isDeleted && ["CONFIRMED", "FULFILLING"].includes(so.status) && (
-        <CreateDNFromSOButton soId={id} />
+      {!isDeleted && !so.invoice && ["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"].includes(so.status) && (
+        <GenerateInvoiceButton soId={id} />
       )}
 
-      {!isDeleted && ["DELIVERED", "FULFILLING"].includes(so.status) && (
-        <GenerateInvoiceButton soId={id} />
+      {!isDeleted && so.invoice && (
+        <Link href={`/sales-invoices/${so.invoice.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          View Invoice ({so.invoice.documentNo})
+        </Link>
       )}
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -105,6 +107,10 @@ export default async function SODetailPage({
           <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
           <CardContent><p className="whitespace-pre-wrap text-sm">{so.notes}</p></CardContent>
         </Card>
+      )}
+
+      {pipelineUrl({ customerId: so.customer?.id }) && (
+        <ReturnToPipeline href={pipelineUrl({ customerId: so.customer?.id })!} />
       )}
     </div>
   );

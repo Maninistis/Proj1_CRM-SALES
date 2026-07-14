@@ -21,11 +21,16 @@ export async function createUserAction(
   formData: FormData
 ): Promise<UserActionState> {
   const parsed = userCreateSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    roleRoleId: formData.get("roleRoleId"),
+    name: formData.get("name") ?? "",
+    email: formData.get("email") ?? "",
+    phone: formData.get("phone") ?? "",
+    image: formData.get("image") ?? "",
+    password: formData.get("password") ?? "",
+    confirmPassword: formData.get("confirmPassword") ?? "",
+    roleRoleId: formData.get("roleRoleId") ?? "",
     status: formData.get("status") || "ACTIVE",
+    managerId: formData.get("managerId") ?? "",
+    requirePasswordChange: formData.get("requirePasswordChange") === "on",
   });
 
   if (!parsed.success) {

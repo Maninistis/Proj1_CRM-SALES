@@ -8,9 +8,9 @@ export const dnItemSchema = z.object({
 
 export const dnCreateSchema = z.object({
   salesOrderId: z.string().min(1, "Sales Order is required"),
-  deliveryDate: z.string().optional().or(z.literal("")),
-  carrier: z.string().optional().or(z.literal("")),
-  trackingNumber: z.string().optional().or(z.literal("")),
+  deliveryDate: z.string().min(1, "Delivery date is required"),
+  carrier: z.string().min(1, "Carrier is required"),
+  trackingNumber: z.string().min(1, "Tracking number is required"),
   notes: z.string().optional().or(z.literal("")),
   items: z.array(dnItemSchema).min(1, "At least one item is required"),
 });

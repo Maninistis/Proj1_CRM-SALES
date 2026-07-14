@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/quotation/constants";
 import { QuotationDetailActions } from "@/components/quotations/quotation-detail-actions";
 import { ConvertQuotationToSOButton } from "@/components/sales-orders/convert-quotation-button";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
@@ -21,6 +22,7 @@ export default async function QuotationDetailPage({
   if (!quote) notFound();
 
   const isDeleted = !!quote.deletedAt;
+  const pipelineHref = quote.opportunity ? pipelineUrl({ leadId: quote.opportunity.leadId }) : null;
 
   return (
     <div className="space-y-6">
@@ -150,6 +152,8 @@ export default async function QuotationDetailPage({
           <CardContent><p className="whitespace-pre-wrap text-sm">{quote.notes}</p></CardContent>
         </Card>
       )}
+
+      {pipelineHref && <ReturnToPipeline href={pipelineHref} />}
     </div>
   );
 }

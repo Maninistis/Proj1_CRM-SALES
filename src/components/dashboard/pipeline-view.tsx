@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, TrendingUp, FileText, Building2, ShoppingCart, ChevronRight, type LucideIcon } from "lucide-react";
+import { UserPlus, TrendingUp, FileText, Building2, ShoppingCart, Receipt, Wallet, Truck, type LucideIcon } from "lucide-react";
 
 type Props = {
-  data: { leads: number; opportunities: number; quotations: number; customers: number; salesOrders: number };
+  data: { leads: number; opportunities: number; quotations: number; customers: number; salesOrders: number; invoices: number; payments: number; deliveryNotes: number };
 };
 
 type Stage = { key: string; label: string; icon: LucideIcon; color: string; bg: string; border: string };
@@ -13,6 +13,9 @@ const stages: Stage[] = [
   { key: "quotations", label: "Quotations", icon: FileText, color: "#DF853A", bg: "#FFC9A320", border: "#DF853A30" },
   { key: "customers", label: "Customers", icon: Building2, color: "#6B8A7A", bg: "#E6EEDC", border: "#6B8A7A30" },
   { key: "salesOrders", label: "Sales Orders", icon: ShoppingCart, color: "#8A6446", bg: "#C7B59930", border: "#8A644630" },
+  { key: "invoices", label: "Invoices", icon: Receipt, color: "#E3B04B", bg: "#E3B04B20", border: "#E3B04B30" },
+  { key: "payments", label: "Payments", icon: Wallet, color: "#2E8B57", bg: "#2E8B5720", border: "#2E8B5730" },
+  { key: "deliveryNotes", label: "Deliveries", icon: Truck, color: "#4A5560", bg: "#4A556020", border: "#4A556030" },
 ];
 
 export function PipelineView({ data }: Props) {

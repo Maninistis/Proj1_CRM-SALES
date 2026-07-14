@@ -7,6 +7,7 @@ const soInclude = {
   quotation: { select: { id: true, documentNo: true, subject: true } },
   createdBy: { select: { id: true, name: true } },
   items: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+  invoice: { where: { deletedAt: null }, select: { id: true, documentNo: true, status: true } },
 } satisfies Prisma.SalesOrderInclude;
 
 export async function findMany(params: {

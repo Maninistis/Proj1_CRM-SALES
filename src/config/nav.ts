@@ -92,12 +92,6 @@ export const navGroups: NavGroup[] = [
         permission: "sales-orders:read",
       },
       {
-        label: "Delivery Notes",
-        href: "/delivery-notes",
-        icon: Truck,
-        permission: "delivery-notes:read",
-      },
-      {
         label: "Invoices",
         href: "/sales-invoices",
         icon: Receipt,
@@ -108,6 +102,12 @@ export const navGroups: NavGroup[] = [
         href: "/payments",
         icon: Wallet,
         permission: "payments:read",
+      },
+      {
+        label: "Delivery Notes",
+        href: "/delivery-notes",
+        icon: Truck,
+        permission: "delivery-notes:read",
       },
     ],
   },
@@ -143,5 +143,12 @@ export const systemNavItems: SystemNavItem[] = [
     icon: Settings,
     permission: "settings:read",
     description: "Configure application",
+  },
+  {
+    label: "Document Settings",
+    href: "/settings/documents",
+    icon: FileText,
+    permission: "settings:read",
+    description: "Branding for invoices, quotations & documents",
   },
 ];

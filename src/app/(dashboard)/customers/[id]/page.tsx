@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/customer/constants";
 import { CustomerDetailActions } from "@/components/customers/customer-detail-actions";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { notFound } from "next/navigation";
 
 export default async function CustomerDetailPage({
@@ -144,6 +145,8 @@ export default async function CustomerDetailPage({
           </CardContent>
         </Card>
       )}
+
+      <ReturnToPipeline href={pipelineUrl({ customerId: customer.id, leadId: customer.leadId })!} />
     </div>
   );
 }

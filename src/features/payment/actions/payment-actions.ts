@@ -15,10 +15,11 @@ export type PaymentActionState = { success: boolean; error?: string };
 export async function createPaymentAction(_prev: PaymentActionState, formData: FormData): Promise<PaymentActionState> {
   const parsed = paymentCreateSchema.safeParse({
     salesInvoiceId: formData.get("salesInvoiceId"),
-    amount: Number(formData.get("amount")),
+    amount: Number(String(formData.get("amount")).replace(/,/g, "")),
     paymentMethod: formData.get("paymentMethod") || "CASH",
     referenceNumber: formData.get("referenceNumber") || undefined,
     paymentDate: formData.get("paymentDate"),
+    proofImageUrl: formData.get("proofImageUrl") || undefined,
     notes: formData.get("notes") || undefined,
   });
 

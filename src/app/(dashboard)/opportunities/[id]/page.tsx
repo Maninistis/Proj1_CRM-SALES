@@ -8,9 +8,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { STAGE_LABELS, STATUS_LABELS } from "@/features/opportunity/constants";
 import { OpportunityDetailActions } from "@/components/opportunities/opportunity-detail-actions";
 import { LeadConvertForm } from "@/components/opportunities/lead-convert-form";
-import { ConvertToCustomerButton } from "@/components/opportunities/convert-to-customer-button";
 import { findByIdIncludingDeleted as findLeadIncludingDeleted } from "@/features/lead/repositories/lead.repository";
 import { findByLeadId } from "@/features/opportunity/repositories/opportunity.repository";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
+import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 
 export default async function OpportunityDetailPage({
@@ -23,6 +24,7 @@ export default async function OpportunityDetailPage({
   if (!opp) notFound();
 
   const isDeleted = !!opp.deletedAt;
+  const pipelineHref = pipelineUrl({ leadId: opp.lead.id });
 
   return (
     <div className="space-y-6">
@@ -54,7 +56,9 @@ export default async function OpportunityDetailPage({
       <OpportunityDetailActions oppId={id} stage={opp.stage} status={opp.status} isDeleted={isDeleted} />
 
       {opp.status === "CLOSED_WON" && !isDeleted && (
-        <ConvertToCustomerButton opportunityId={id} />
+        <Link href={`/quotations/new?opportunityId=${id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <FileText className="mr-2 h-4 w-4" /> Create Quotation
+        </Link>
       )}
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -127,6 +131,8 @@ export default async function OpportunityDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {pipelineHref && <ReturnToPipeline href={pipelineHref} />}
     </div>
   );
 }

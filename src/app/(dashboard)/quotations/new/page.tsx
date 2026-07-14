@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { QuotationForm } from "@/components/quotations/quotation-form";
 import { PageHeader } from "@/components/page-header";
 import { mapOpportunityToQuotation } from "@/lib/workflow/mappers";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 
 export default async function NewQuotationPage({
   searchParams,
@@ -26,7 +27,7 @@ export default async function NewQuotationPage({
     opportunityId
       ? prisma.opportunity.findUnique({
           where: { id: opportunityId, deletedAt: null },
-          select: { id: true, title: true, expectedCloseDate: true, description: true, documentNo: true },
+          select: { id: true, title: true, expectedCloseDate: true, description: true, documentNo: true, leadId: true },
         })
       : Promise.resolve(null),
   ]);
@@ -51,6 +52,10 @@ export default async function NewQuotationPage({
     <div className="space-y-6">
       <PageHeader title="New Quotation" description="Create a quotation from a won opportunity" />
       <QuotationForm opportunities={oppOptions} defaultTaxRate={defaultTaxRate} catalog={catalog} prefill={prefill} />
+      {opportunity && (() => {
+        const href = pipelineUrl({ leadId: opportunity.leadId });
+        return href && <ReturnToPipeline href={href} />;
+      })()}
     </div>
   );
 }

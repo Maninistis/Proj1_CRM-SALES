@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { STATUS_LABELS } from "@/features/delivery-note/constants";
 import { DNDetailActions } from "@/components/delivery-notes/dn-detail-actions";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
 export default async function DNDetailPage({
@@ -17,6 +19,14 @@ export default async function DNDetailPage({
   if (!dn) notFound();
 
   const isDeleted = !!dn.deletedAt;
+
+  const payment = dn.salesOrder
+    ? await prisma.payment.findFirst({
+        where: { salesInvoice: { salesOrderId: dn.salesOrder.id }, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, documentNo: true },
+      })
+    : null;
 
   return (
     <div className="space-y-6">
@@ -40,7 +50,7 @@ export default async function DNDetailPage({
           <CardHeader><CardTitle>Delivery Info</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">DN #</span><span className="font-mono text-xs">{dn.documentNo}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Sales Order</span>{dn.salesOrder ? <Link href={`/sales-orders/${dn.salesOrder.id}`} className="text-primary hover:underline">{dn.salesOrder.documentNo}</Link> : "—"}</div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payment Record</span>{payment ? <Link href={`/payments/${payment.id}`} className="text-primary hover:underline">{payment.documentNo}</Link> : "—"}</div>
             <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span>{dn.salesOrder?.customer?.name ?? "—"}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Carrier</span><span>{dn.carrier || "—"}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Tracking #</span><span className="font-mono text-xs">{dn.trackingNumber || "—"}</span></div>
@@ -78,6 +88,10 @@ export default async function DNDetailPage({
           <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
           <CardContent><p className="whitespace-pre-wrap text-sm">{dn.notes}</p></CardContent>
         </Card>
+      )}
+
+      {pipelineUrl({ customerId: dn.salesOrder?.customer?.id }) && (
+        <ReturnToPipeline href={pipelineUrl({ customerId: dn.salesOrder?.customer?.id })!} />
       )}
     </div>
   );

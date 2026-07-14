@@ -80,7 +80,7 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email *</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="john@example.com" {...field} />
                     </FormControl>
@@ -93,7 +93,7 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Phone *</FormLabel>
                     <FormControl>
                       <PhoneInput placeholder="09171234567" {...field} />
                     </FormControl>
@@ -121,7 +121,7 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                 name="jobTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Title</FormLabel>
+                    <FormLabel>Job Title *</FormLabel>
                     <FormControl>
                       <Input placeholder="Manager" {...field} />
                     </FormControl>
@@ -136,8 +136,8 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                 name="source"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Source</FormLabel>
-                    <Select items={buildOptionItems(LEAD_SOURCE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
+                    <FormLabel>Source *</FormLabel>
+                    <Select name={field.name} items={buildOptionItems(LEAD_SOURCE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -160,8 +160,8 @@ export function LeadForm({ users }: { users: UserOption[] }) {
                 name="assignedToId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assigned To</FormLabel>
-                    <Select items={buildItems(users)} value={field.value} onValueChange={field.onChange}>
+                    <FormLabel>Assigned To *</FormLabel>
+                    <Select name={field.name} items={buildItems(users)} value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Unassigned" />

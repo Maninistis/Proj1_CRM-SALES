@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { findByIdIncludingDeleted } from "@/features/payment/repositories/payment.repository";
+import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS, METHOD_LABELS } from "@/features/payment/constants";
 import { PaymentDetailActions } from "@/components/payments/payment-detail-actions";
+import { checkPaymentBeforeDelivery } from "@/lib/workflow/delivery-policy";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { notFound } from "next/navigation";
+import { Printer, FileDown } from "lucide-react";
 
 export default async function PaymentDetailPage({
   params,
@@ -18,9 +23,31 @@ export default async function PaymentDetailPage({
 
   const isDeleted = !!payment.deletedAt;
 
+  const deliveryCheck = payment.salesInvoice && !isDeleted && payment.status === "RECEIVED"
+    ? await checkPaymentBeforeDelivery(payment.salesInvoice.salesOrderId)
+    : null;
+
+  const totalReceivedAgg = await prisma.payment.aggregate({
+    _sum: { amount: true },
+    where: { salesInvoiceId: payment.salesInvoiceId, deletedAt: null, status: "RECEIVED" },
+  });
+  const totalReceived = Number(totalReceivedAgg._sum.amount ?? 0);
+  const invoiceTotal = Number(payment.salesInvoice?.grandTotal ?? 0);
+
   return (
     <div className="space-y-6">
-      <PageHeader title={payment.documentNo} description={payment.customerName} />
+      <PageHeader title={payment.documentNo} description={payment.customerName}>
+        {!isDeleted && payment.status === "RECEIVED" && (
+          <div className="flex items-center gap-2">
+            <Link href={`/payments/${id}/print?auto=1`} target="_blank" className={buttonVariants({ variant: "default", size: "sm" })}>
+              <Printer className="mr-2 h-4 w-4" /> Print Receipt
+            </Link>
+            <a href={`/api/payments/${id}/pdf`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+              <FileDown className="mr-2 h-4 w-4" /> Download PDF
+            </a>
+          </div>
+        )}
+      </PageHeader>
 
       <div className="flex items-center gap-3">
         <Badge variant={payment.status === "RECEIVED" ? "default" : payment.status === "FAILED" || payment.status === "CANCELLED" ? "destructive" : "secondary"}>
@@ -30,7 +57,13 @@ export default async function PaymentDetailPage({
         {isDeleted && <Badge variant="destructive">Deleted</Badge>}
       </div>
 
-      <PaymentDetailActions paymentId={id} invoiceId={payment.salesInvoiceId} isDeleted={isDeleted} />
+      <PaymentDetailActions
+        paymentId={id}
+        invoiceId={payment.salesInvoiceId}
+        isDeleted={isDeleted}
+        canDeliver={deliveryCheck?.canDeliver ?? false}
+        salesOrderId={payment.salesInvoice?.salesOrderId}
+      />
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
@@ -53,8 +86,9 @@ export default async function PaymentDetailPage({
           <CardContent className="space-y-3 text-sm">
             {payment.salesInvoice ? (
               <>
-                <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span>₱{Number(payment.salesInvoice.grandTotal).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span>₱{invoiceTotal.toLocaleString()}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">This Payment</span><span className="text-green-600">₱{Number(payment.amount).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Received</span><span className="font-medium text-green-600">₱{totalReceived.toLocaleString()} / ₱{invoiceTotal.toLocaleString()}</span></div>
                 <div className="flex justify-between border-t border-border pt-2"><span className="font-medium">Invoice Status</span><Badge variant="secondary">{payment.salesInvoice.status}</Badge></div>
               </>
             ) : <p className="text-muted-foreground">Invoice not found.</p>}
@@ -68,6 +102,17 @@ export default async function PaymentDetailPage({
           <CardContent><p className="whitespace-pre-wrap text-sm">{payment.notes}</p></CardContent>
         </Card>
       )}
+
+      {payment.proofImageUrl && (
+        <Card>
+          <CardHeader><CardTitle>Proof of Payment</CardTitle></CardHeader>
+          <CardContent>
+            <img src={payment.proofImageUrl} alt="Proof of Payment" className="max-h-96 rounded-lg border border-border" />
+          </CardContent>
+        </Card>
+      )}
+
+      <ReturnToPipeline href={pipelineUrl({ customerId: payment.customerId })!} />
     </div>
   );
 }

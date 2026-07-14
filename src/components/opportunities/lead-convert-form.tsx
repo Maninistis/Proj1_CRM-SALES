@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { convertLeadAction, type OpportunityActionState } from "@/features/opportunity/actions/opportunity-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/forms/money-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
@@ -22,6 +23,8 @@ export function LeadConvertForm({ leadId, leadName }: LeadConvertFormProps) {
   const defaultCloseDate = new Date(today.setMonth(today.getMonth() + 1))
     .toISOString()
     .split("T")[0];
+
+  const [estimatedValue, setEstimatedValue] = useState(0);
 
   return (
     <Card className="max-w-full border-primary/30">
@@ -42,15 +45,13 @@ export function LeadConvertForm({ leadId, leadName }: LeadConvertFormProps) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="estimatedValue">Estimated Value *</Label>
-              <Input
+              <MoneyInput
                 id="estimatedValue"
-                name="estimatedValue"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="50000"
-                defaultValue="0"
+                value={estimatedValue}
+                onChange={setEstimatedValue}
+                placeholder="50,000"
               />
+              <input type="hidden" name="estimatedValue" value={estimatedValue} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="expectedCloseDate">Expected Close Date *</Label>

@@ -18,14 +18,19 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  phone         String?
   passwordHash  String    @map("password_hash")
   roleRoleId    String    @map("role_id")
-  status        String    @default("ACTIVE") // ACTIVE | INACTIVE
+  status        String    @default("ACTIVE")
+  managerId     String?   @map("manager_id")
+  requirePasswordChange Boolean @default(false) @map("require_password_change")
   lastLoginAt   DateTime? @map("last_login_at")
   createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  updatedAt     DateTime  @updatedAt       @map("updated_at")
 
   role              Role                @relation(fields: [roleRoleId], references: [id])
+  manager           User?               @relation("UserManager", fields: [managerId], references: [id])
+  directReports     User[]              @relation("UserManager")
   accounts          Account[]
   sessions          Session[]
   assignedLeads     Lead[]              @relation("AssignedLeads")
@@ -566,6 +571,7 @@ model Payment {
   paymentDate     DateTime  @map("payment_date")
   status          String    @default("RECEIVED")
   notes           String?   @db.Text
+  proofImageUrl    String?  @map("proof_image_url")
   receivedById    String?   @map("received_by_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -620,4 +626,58 @@ model Message {
   @@index([senderId])
   @@index([readAt])
   @@index([createdAt])
+}
+
+// === DOCUMENT SETTINGS (singleton) ===
+
+model DocumentSetting {
+  id                String   @id @default(cuid())
+
+  // Company Branding
+  logoUrl           String?  @map("logo_url")
+  companyName       String?  @map("company_name")
+  companyDesc       String?  @map("company_desc")
+  addressLine1      String?  @map("address_line1")
+  addressLine2      String?  @map("address_line2")
+  city              String?
+  province          String?
+  zipCode           String?  @map("zip_code")
+  country           String?
+  phone             String?
+  mobile            String?
+  email             String?
+  website           String?
+  facebook          String?
+  linkedin          String?
+  instagram         String?
+
+  // Document Preferences
+  invoicePrefix     String   @default("INV")  @map("invoice_prefix")
+  quotationPrefix   String   @default("Q")    @map("quotation_prefix")
+  soPrefix          String   @default("SO")   @map("so_prefix")
+  deliveryPrefix    String   @default("DN")   @map("delivery_prefix")
+  paymentPrefix     String   @default("PAY")  @map("payment_prefix")
+  orPrefix          String   @default("OR")   @map("or_prefix")
+  startingNumber    Int      @default(1)      @map("starting_number")
+  currency          String   @default("PHP")
+  dateFormat        String   @default("MMM DD, YYYY") @map("date_format")
+  timezone          String   @default("Asia/Manila")
+  decimalPlaces     Int      @default(2)      @map("decimal_places")
+  paperSize         String   @default("A4")   @map("paper_size")
+  orientation       String   @default("portrait")
+
+  // Rich Text Sections
+  termsContent      String?  @db.Text @map("terms_content")
+  paymentInfo       String?  @db.Text @map("payment_info")
+  footerContent     String?  @db.Text @map("footer_content")
+
+  // Signature
+  signatureUrl      String?  @map("signature_url")
+  signatureName     String?  @map("signature_name")
+  signaturePosition String?  @map("signature_position")
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt       @map("updated_at")
+
+  @@map("document_settings")
 }

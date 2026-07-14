@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS } from "@/features/lead/constants";
 import { LeadDetailActions } from "@/components/leads/lead-detail-actions";
 import { LeadConvertForm } from "@/components/opportunities/lead-convert-form";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 

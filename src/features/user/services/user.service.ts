@@ -39,6 +39,10 @@ export async function create_(input: {
   password: string;
   roleRoleId: string;
   status: string;
+  phone?: string;
+  image?: string;
+  managerId?: string;
+  requirePasswordChange?: boolean;
 }) {
   const session = await auth();
   requirePermission(session, "users:create");
@@ -53,6 +57,10 @@ export async function create_(input: {
     passwordHash,
     roleRoleId: input.roleRoleId,
     status: input.status,
+    phone: input.phone,
+    image: input.image,
+    managerId: input.managerId,
+    requirePasswordChange: input.requirePasswordChange,
   });
 
   await audit({

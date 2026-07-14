@@ -3,10 +3,13 @@ import { findByIdIncludingDeleted } from "@/features/sales-invoice/repositories/
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { STATUS_LABELS } from "@/features/sales-invoice/constants";
 import { InvoiceDetailActions } from "@/components/invoices/invoice-detail-actions";
-import { RecordPaymentButton } from "@/components/invoices/record-payment-button";
+import { checkPaymentBeforeDelivery } from "@/lib/workflow/delivery-policy";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 import { notFound } from "next/navigation";
+import { Truck, Lock, Printer, FileDown } from "lucide-react";
 
 export default async function InvoiceDetailPage({
   params,
@@ -20,9 +23,24 @@ export default async function InvoiceDetailPage({
   const isDeleted = !!inv.deletedAt;
   const balance = Number(inv.grandTotal) - Number(inv.paidAmount);
 
+  const deliveryCheck = inv.salesOrder && !isDeleted && inv.status !== "VOIDED" && inv.status !== "DRAFT"
+    ? await checkPaymentBeforeDelivery(inv.salesOrder.id)
+    : null;
+
   return (
     <div className="space-y-6">
-      <PageHeader title={inv.documentNo} description={inv.customerName} />
+      <PageHeader title={inv.documentNo} description={inv.customerName}>
+        {!isDeleted && (
+          <div className="flex items-center gap-2">
+            <Link href={`/sales-invoices/${id}/print?auto=1`} target="_blank" className={buttonVariants({ variant: "default", size: "sm" })}>
+              <Printer className="mr-2 h-4 w-4" /> Print Invoice
+            </Link>
+            <a href={`/api/invoices/${id}/pdf`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+              <FileDown className="mr-2 h-4 w-4" /> Download PDF
+            </a>
+          </div>
+        )}
+      </PageHeader>
 
       <div className="flex items-center gap-3">
         <Badge variant={
@@ -42,8 +60,10 @@ export default async function InvoiceDetailPage({
 
       <InvoiceDetailActions invId={id} status={inv.status} isDeleted={isDeleted} />
 
-      {!isDeleted && ["OPEN", "PARTIALLY_PAID", "OVERDUE"].includes(inv.status) && (
-        <RecordPaymentButton invoiceId={id} />
+      {deliveryCheck && deliveryCheck.canDeliver && inv.salesOrder && (
+        <Link href={`/delivery-notes/new?so=${inv.salesOrder.id}`} className={buttonVariants({ variant: "default", size: "sm" })}>
+          <Truck className="mr-2 h-4 w-4" /> Create Delivery Note
+        </Link>
       )}
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -69,7 +89,7 @@ export default async function InvoiceDetailPage({
             <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="text-red-600">-₱{Number(inv.discountTotal).toLocaleString()}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">VAT ({(Number(inv.taxRate) * 100).toFixed(1)}%)</span><span>₱{Number(inv.taxTotal).toLocaleString()}</span></div>
             <div className="flex justify-between border-t border-border pt-2 text-base font-bold"><span>Grand Total</span><span>₱{Number(inv.grandTotal).toLocaleString()}</span></div>
-            <div className="flex justify-between text-green-600"><span className="font-medium">Paid</span><span className="font-medium">₱{Number(inv.paidAmount).toLocaleString()}</span></div>
+            <div className="flex justify-between gap-4 text-green-600"><span className="shrink-0 font-medium">Received</span><span className="text-right text-sm">₱{Number(inv.paidAmount).toLocaleString()} / ₱{Number(inv.grandTotal).toLocaleString()}</span></div>
             {inv.paidAt && (
               <div className="flex justify-between text-xs text-muted-foreground"><span>Last Payment Received</span><span>{new Date(inv.paidAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
             )}
@@ -111,6 +131,10 @@ export default async function InvoiceDetailPage({
           <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
           <CardContent><p className="whitespace-pre-wrap text-sm">{inv.notes}</p></CardContent>
         </Card>
+      )}
+
+      {pipelineUrl({ customerId: inv.customer?.id }) && (
+        <div><ReturnToPipeline href={pipelineUrl({ customerId: inv.customer?.id })!} /></div>
       )}
     </div>
   );

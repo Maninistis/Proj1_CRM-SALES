@@ -24,15 +24,15 @@ export async function createLeadAction(
   formData: FormData
 ): Promise<LeadActionState> {
   const parsed = leadCreateSchema.safeParse({
-    firstName: formData.get("firstName"),
-    lastName: formData.get("lastName"),
-    email: formData.get("email") || undefined,
-    phone: formData.get("phone") || undefined,
-    company: formData.get("company") || undefined,
-    jobTitle: formData.get("jobTitle") || undefined,
+    firstName: formData.get("firstName") ?? "",
+    lastName: formData.get("lastName") ?? "",
+    email: formData.get("email") ?? "",
+    phone: formData.get("phone") ?? "",
+    company: formData.get("company") ?? "",
+    jobTitle: formData.get("jobTitle") ?? "",
     source: formData.get("source") || "OTHER",
-    assignedToId: formData.get("assignedToId") || undefined,
-    notes: formData.get("notes") || undefined,
+    assignedToId: formData.get("assignedToId") ?? "",
+    notes: formData.get("notes") ?? "",
   });
 
   if (!parsed.success) {
@@ -56,15 +56,15 @@ export async function updateLeadAction(
   formData: FormData
 ): Promise<LeadActionState> {
   const parsed = leadUpdateSchema.safeParse({
-    firstName: formData.get("firstName") || undefined,
-    lastName: formData.get("lastName") || undefined,
-    email: formData.get("email") || undefined,
-    phone: formData.get("phone") || undefined,
-    company: formData.get("company") || undefined,
-    jobTitle: formData.get("jobTitle") || undefined,
-    source: formData.get("source") || undefined,
-    assignedToId: formData.get("assignedToId") || undefined,
-    notes: formData.get("notes") || undefined,
+    firstName: formData.get("firstName") ?? "",
+    lastName: formData.get("lastName") ?? "",
+    email: formData.get("email") ?? "",
+    phone: formData.get("phone") ?? "",
+    company: formData.get("company") ?? "",
+    jobTitle: formData.get("jobTitle") ?? "",
+    source: formData.get("source") ?? "OTHER",
+    assignedToId: formData.get("assignedToId") ?? "",
+    notes: formData.get("notes") ?? "",
   });
 
   if (!parsed.success) {

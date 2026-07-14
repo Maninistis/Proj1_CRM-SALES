@@ -3,7 +3,7 @@ import { skipTake } from "@/lib/pagination";
 import type { Prisma } from "@prisma/client";
 
 const paymentInclude = {
-  salesInvoice: { select: { id: true, documentNo: true, grandTotal: true, status: true } },
+  salesInvoice: { select: { id: true, documentNo: true, grandTotal: true, status: true, salesOrderId: true } },
   customer: { select: { id: true, name: true } },
   receivedBy: { select: { id: true, name: true } },
 } satisfies Prisma.PaymentInclude;
@@ -66,6 +66,7 @@ export async function create(data: {
   paymentMethod: string;
   referenceNumber?: string;
   paymentDate: Date;
+  proofImageUrl?: string | null;
   notes?: string;
   receivedById: string;
 }) {
@@ -79,6 +80,7 @@ export async function create(data: {
       paymentMethod: data.paymentMethod,
       referenceNumber: data.referenceNumber || null,
       paymentDate: data.paymentDate,
+      proofImageUrl: data.proofImageUrl || null,
       notes: data.notes || null,
       receivedById: data.receivedById,
       status: "RECEIVED",

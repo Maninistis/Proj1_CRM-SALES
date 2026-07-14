@@ -95,7 +95,7 @@ export function LeadEditForm({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email *</FormLabel>
                     <FormControl><Input type="email" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,7 +106,7 @@ export function LeadEditForm({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Phone *</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -130,7 +130,7 @@ export function LeadEditForm({
                 name="jobTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Title</FormLabel>
+                    <FormLabel>Job Title *</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,8 +143,8 @@ export function LeadEditForm({
                 name="source"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Source</FormLabel>
-                    <Select items={buildOptionItems(LEAD_SOURCE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
+                    <FormLabel>Source *</FormLabel>
+                    <Select name={field.name} items={buildOptionItems(LEAD_SOURCE_OPTIONS)} value={field.value} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         {LEAD_SOURCE_OPTIONS.map((opt) => (
@@ -161,8 +161,8 @@ export function LeadEditForm({
                 name="assignedToId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assigned To</FormLabel>
-                    <Select items={buildItems(users)} value={field.value ?? undefined} onValueChange={field.onChange}>
+                    <FormLabel>Assigned To *</FormLabel>
+                    <Select name={field.name} items={buildItems(users)} value={field.value ?? undefined} onValueChange={field.onChange}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {users.map((u) => (

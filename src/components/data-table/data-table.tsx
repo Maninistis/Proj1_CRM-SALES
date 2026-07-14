@@ -215,7 +215,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-y-3">
         <p className="text-sm text-muted-foreground">
           {total > 0 ? `Showing ${start}-${end} of ${total}` : "No results"}
         </p>

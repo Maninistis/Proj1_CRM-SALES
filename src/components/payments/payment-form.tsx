@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { paymentCreateSchema, type PaymentCreateInput } from "@/features/payment/schemas/payment-create";
@@ -8,10 +8,12 @@ import { createPaymentAction, type PaymentActionState } from "@/features/payment
 import { METHOD_OPTIONS } from "@/features/payment/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/forms/money-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PrefillBanner } from "@/components/forms/prefill-banner";
+import { Upload, Loader2, X } from "lucide-react";
 
 export function PaymentForm({
   invoiceId,
@@ -27,6 +29,9 @@ export function PaymentForm({
   alreadyPaid: number;
 }) {
   const [state, formAction] = useActionState<PaymentActionState, FormData>(createPaymentAction, { success: false });
+  const [proofUrl, setProofUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const remaining = grandTotal - alreadyPaid;
   const today = new Date().toISOString().split("T")[0];
 
@@ -38,9 +43,33 @@ export function PaymentForm({
       paymentMethod: "BANK_TRANSFER",
       referenceNumber: "",
       paymentDate: today,
+      proofImageUrl: "",
       notes: "",
     },
   });
+
+  const method = form.watch("paymentMethod");
+  const isCash = method === "CASH";
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/payment-proof", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setProofUrl(data.url);
+      form.setValue("proofImageUrl", data.url, { shouldValidate: true });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <Card className="max-w-full">
@@ -56,11 +85,12 @@ export function PaymentForm({
           <form action={formAction} className="space-y-4">
             <PrefillBanner sourceLabel={`Invoice #${invoiceNo}`} targetLabel="Payment" />
             <input type="hidden" name="salesInvoiceId" value={invoiceId} />
+            <input type="hidden" name="proofImageUrl" value={proofUrl} />
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="amount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Amount (₱) *</FormLabel>
-                  <FormControl><Input type="number" min="0.01" max={remaining} step="0.01" {...field} /></FormControl>
+                  <FormControl><MoneyInput placeholder="50,000" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -75,18 +105,42 @@ export function PaymentForm({
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Payment Method *</label>
-                <select name="paymentMethod" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue="BANK_TRANSFER">
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue="BANK_TRANSFER" {...form.register("paymentMethod")}>
                   {METHOD_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
               <FormField control={form.control} name="referenceNumber" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reference #</FormLabel>
+                  <FormLabel>Reference #{!isCash ? " *" : ""}</FormLabel>
                   <FormControl><Input placeholder="Bank ref, check no, GCash ref..." {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Proof of Payment{!isCash ? " *" : ""}</label>
+              {proofUrl ? (
+                <div className="flex items-center gap-3 rounded-md border border-input p-3">
+                  <img src={proofUrl} alt="Proof" className="h-16 w-16 rounded object-cover" />
+                  <span className="flex-1 text-sm text-muted-foreground">{proofUrl.split("/").pop()}</span>
+                  <button type="button" onClick={() => { setProofUrl(""); form.setValue("proofImageUrl", "", { shouldValidate: true }); }} className="text-destructive hover:text-destructive/80">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-input px-4 py-3 text-sm text-muted-foreground hover:bg-muted/50">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? "Uploading..." : "Click to upload proof of payment (JPG, PNG)"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+                </label>
+              )}
+              {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+              {form.formState.errors.proofImageUrl && (
+                <p className="text-xs text-destructive">{form.formState.errors.proofImageUrl.message}</p>
+              )}
+            </div>
+
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem>
                 <FormLabel>Notes</FormLabel>

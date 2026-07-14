@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/features/dashboard/services/dashboard.service";
+import { getOnboardingStatus } from "@/features/dashboard/services/onboarding.service";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
@@ -20,7 +21,10 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const range = (params.range as string) || "all";
-  const data = await getDashboardData(range as any);
+  const [data, onboarding] = await Promise.all([
+    getDashboardData(range as any),
+    getOnboardingStatus(),
+  ]);
   const session = await auth();
 
   if (!data) return <div className="p-6"><p className="text-sm text-[#787F87]">Loading...</p></div>;
@@ -37,7 +41,7 @@ export default async function DashboardPage({
   return (
     <div className="space-y-5">
       {/* Compact header with date filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-y-3">
         <div>
           <h1 className="font-heading text-xl font-bold text-[#103447]">
             Welcome back, {session?.user?.name?.split(" ")[0] ?? "User"}
@@ -91,7 +95,7 @@ export default async function DashboardPage({
       {/* Top Customers + Quick Actions */}
       <div className="grid gap-4 lg:grid-cols-2">
         <TopCustomers customers={topCustomers ?? null} />
-        <QuickActions permissions={permissions} />
+        <QuickActions permissions={permissions} onboarding={onboarding} />
       </div>
     </div>
   );

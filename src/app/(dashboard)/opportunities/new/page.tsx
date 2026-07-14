@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { OpportunityForm } from "@/components/opportunities/opportunity-form";
 import { PageHeader } from "@/components/page-header";
 import { mapLeadToOpportunity } from "@/lib/workflow/mappers";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 
 export default async function NewOpportunityPage({
   searchParams,
@@ -41,6 +42,10 @@ export default async function NewOpportunityPage({
     <div className="space-y-6">
       <PageHeader title="New Opportunity" description="Create a new sales opportunity from a qualified lead" />
       <OpportunityForm leads={leadOptions} users={users} prefill={prefill} />
+      {(() => {
+        const href = pipelineUrl({ leadId });
+        return href && <ReturnToPipeline href={href} />;
+      })()}
     </div>
   );
 }

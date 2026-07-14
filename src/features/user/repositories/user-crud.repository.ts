@@ -49,9 +49,23 @@ export async function create(data: {
   passwordHash: string;
   roleRoleId: string;
   status: string;
+  phone?: string;
+  image?: string;
+  managerId?: string;
+  requirePasswordChange?: boolean;
 }) {
   return prisma.user.create({
-    data,
+    data: {
+      name: data.name,
+      email: data.email,
+      passwordHash: data.passwordHash,
+      roleRoleId: data.roleRoleId,
+      status: data.status,
+      phone: data.phone || null,
+      image: data.image || null,
+      managerId: data.managerId || null,
+      requirePasswordChange: data.requirePasswordChange ?? false,
+    },
     include: userInclude,
   });
 }

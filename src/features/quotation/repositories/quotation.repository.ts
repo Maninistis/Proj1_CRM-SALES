@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 const quoteInclude = {
   opportunity: {
-    select: { id: true, title: true, documentNo: true },
+    select: { id: true, title: true, documentNo: true, leadId: true },
   },
   createdBy: { select: { id: true, name: true } },
   items: {

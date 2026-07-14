@@ -22,7 +22,7 @@ export function KpiCard({ title, value, description, icon: Icon, trend, trendLab
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#787F87]">{title}</p>
-          <p className="font-heading text-3xl font-bold leading-none text-[#103447]">{value}</p>
+          <p className="truncate font-heading text-2xl font-bold leading-none text-[#103447] xl:text-3xl">{value}</p>
         </div>
         <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}15` }}>
           <Icon className="h-5 w-5" style={{ color: accent }} />

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { PaymentForm } from "@/components/payments/payment-form";
 import { PageHeader } from "@/components/page-header";
 import { notFound } from "next/navigation";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 
 export default async function NewPaymentPage({
   searchParams,
@@ -42,6 +43,10 @@ export default async function NewPaymentPage({
         grandTotal={grandTotal}
         alreadyPaid={alreadyPaid}
       />
+      {(() => {
+        const href = pipelineUrl({ customerId: invoice.customerId });
+        return href && <ReturnToPipeline href={href} />;
+      })()}
     </div>
   );
 }

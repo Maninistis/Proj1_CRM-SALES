@@ -61,8 +61,8 @@ export async function create_(input: {
   });
   if (!so) throw new NotFoundError("Sales Order", input.salesOrderId);
 
-  if (!["DELIVERED", "FULFILLING"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be DELIVERED or FULFILLING to invoice");
+  if (!["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"].includes(so.status)) {
+    throw new ConflictError("Sales Order must be CONFIRMED to create an invoice");
   }
 
   const existing = await findBySalesOrderId(input.salesOrderId);
@@ -145,8 +145,8 @@ export async function generateFromSalesOrder(salesOrderId: string) {
   });
   if (!so) throw new NotFoundError("Sales Order", salesOrderId);
 
-  if (!["DELIVERED", "FULFILLING"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be DELIVERED or FULFILLING to invoice");
+  if (!["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"].includes(so.status)) {
+    throw new ConflictError("Sales Order must be CONFIRMED to create an invoice");
   }
 
   const existing = await findBySalesOrderId(salesOrderId);

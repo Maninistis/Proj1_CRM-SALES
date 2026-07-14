@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { PageHeader } from "@/components/page-header";
 import { mapLeadToCustomer } from "@/lib/workflow/mappers";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 
 export default async function NewCustomerPage({
   searchParams,
@@ -24,6 +25,10 @@ export default async function NewCustomerPage({
     <div className="space-y-6">
       <PageHeader title="New Customer" description="Add a new customer to your database" />
       <CustomerForm prefill={prefill} />
+      {(() => {
+        const href = pipelineUrl({ leadId });
+        return href && <ReturnToPipeline href={href} />;
+      })()}
     </div>
   );
 }

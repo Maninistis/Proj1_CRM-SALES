@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { SOForm } from "@/components/sales-orders/so-form";
 import { PageHeader } from "@/components/page-header";
 import { mapQuotationToSalesOrder } from "@/lib/workflow/mappers";
+import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
 
 export default async function NewSOPage({
   searchParams,
@@ -62,6 +63,10 @@ export default async function NewSOPage({
     <div className="space-y-6">
       <PageHeader title="New Sales Order" description="Create a sales order for an active customer" />
       <SOForm customers={customers} defaultTaxRate={defaultTaxRate} catalog={catalog} prefill={prefill} />
+      {(() => {
+        const href = pipelineUrl({ customerId: resolvedCustomer?.id, leadId: quotation?.opportunity?.leadId });
+        return href && <ReturnToPipeline href={href} />;
+      })()}
     </div>
   );
 }
