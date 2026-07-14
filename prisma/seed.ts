@@ -105,7 +105,7 @@ async function main() {
   }
   const [adminId, rep1Id, rep2Id, mgrId] = ["admin@crm.local","john.cruz@crm.local","maria.santos@crm.local","carlos.reyes@crm.local"].map(e => userIds[e]);
   const repIds = [rep1Id, rep2Id];
-  console.log(`Users: 5`);
+  console.log(`Users: 4`);
 
   await prisma.product.deleteMany();
   for (const p of PRODUCTS) await prisma.product.create({ data: { name: p.name, description: p.name, defaultPrice: p.price, category: p.category, isActive: true } });
@@ -149,7 +149,7 @@ async function main() {
   }
   console.log(`Leads: ${leadCount} (${qualified.length} qualified)`);
 
-  const oppsWon: {company:string;repId:string}[] = [];
+  const oppsWon: {company:string;repId:string;leadId:string}[] = [];
   const stages = ["PROSPECTING","QUALIFICATION","NEEDS_ANALYSIS","VALUE_PROPOSITION","NEGOTIATION"];
   for (let i = 0; i < qualified.length; i++) {
     const lead = qualified[i];
@@ -166,11 +166,11 @@ async function main() {
       lossReason: isLost ? "Competitor won the deal" : null,
       assignedToId: lead.repId, createdById: adminId, createdAt: created, updatedAt: created,
     }});
-    if (isWon) oppsWon.push({company:lead.company,repId:lead.repId});
+    if (isWon) oppsWon.push({company:lead.company,repId:lead.repId,leadId:lead.id});
   }
   console.log(`Opportunities: ${qualified.length} (${oppsWon.length} won)`);
 
-  const acceptedQuotes: {company:string;repId:string;items:{d:string;q:number;p:number;dp:number}[]}[] = [];
+  const acceptedQuotes: {company:string;repId:string;leadId:string;items:{d:string;q:number;p:number;dp:number}[]}[] = [];
   for (let i = 0; i < oppsWon.length; i++) {
     const opp = oppsWon[i];
     const created = daysAgo(110 - Math.floor((i/oppsWon.length)*100));
@@ -189,7 +189,7 @@ async function main() {
       createdById: opp.repId, createdAt: created, updatedAt: created,
       items: { create: items.map((it,k)=>({description:it.d,quantity:it.q,unitPrice:it.p,discountPercent:it.dp,lineTotal:lt[k]})) },
     }});
-    if (status==="ACCEPTED") acceptedQuotes.push({company:opp.company,repId:opp.repId,items});
+    if (status==="ACCEPTED") acceptedQuotes.push({company:opp.company,repId:opp.repId,leadId:opp.leadId,items});
   }
   console.log(`Quotations: ${oppsWon.length} (${acceptedQuotes.length} accepted)`);
 
@@ -201,7 +201,7 @@ async function main() {
       documentNo: await genDocNo("CUST"), name: q.company, email: `finance@${slug}.com.ph`,
       phone: `+63 2 8${String(5000000+i*1337).slice(0,7)}`, taxId: `${String(100+i).padStart(3,"0")}-${String(200+i).padStart(3,"0")}-${String(300+i).padStart(3,"0")}-000`,
       website: `www.${slug}.com.ph`, status: "ACTIVE", creditLimit: 5000000,
-      paymentTerms: i%3===0?15:i%3===1?30:45, createdById: adminId, createdAt: created, updatedAt: created,
+      paymentTerms: i%3===0?15:i%3===1?30:45, leadId: q.leadId, createdById: adminId, createdAt: created, updatedAt: created,
       addresses: { create: [
         { type:"BILLING", line1:`${10+i*5} ${city.street}`, line2:`Floor ${5+i%20}`, city:city.city, state:city.state, postalCode:city.zip, country:"Philippines" },
         { type:"SHIPPING", line1:`${20+i*3} Warehouse Rd`, city:city.city, state:city.state, postalCode:city.zip, country:"Philippines" },
@@ -333,7 +333,7 @@ async function main() {
     console.log(`  ${new Date(Number(y),Number(m)-1,1).toLocaleDateString("en-PH",{month:"short",year:"numeric"})}: ₱${amt.toLocaleString()}`);
     totalRev += amt;
   }
-  console.log(`\nTotal: ₱${totalRev.toLocaleString()}\nLogin: admin@crm.local / admin123 (or any user / password123)`);
+  console.log(`\nTotal: ₱${totalRev.toLocaleString()}\nLogin: admin@crm.local / password123 (or any user / password123)`);
   await prisma.$disconnect();
 }
 main().catch(e=>{console.error(e);process.exit(1);});

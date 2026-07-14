@@ -47,7 +47,7 @@ const columns: ColumnDef<Payment>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={row.original.status === "RECEIVED" ? "default" : row.original.status === "FAILED" || row.original.status === "CANCELLED" ? "destructive" : "secondary"}>
+      <Badge variant={row.original.status === "RECEIVED" ? "default" : row.original.status === "FAILED" || row.original.status === "CANCELLED" ? "destructive" : "secondary"} className={row.original.status === "RECEIVED" ? "border-transparent bg-[#103447] text-white" : ""}>
         {STATUS_LABELS[row.original.status] ?? row.original.status}
       </Badge>
     ),

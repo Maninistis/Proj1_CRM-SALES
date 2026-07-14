@@ -48,8 +48,10 @@ The system standardizes the entire sales workflow — Lead → Opportunity → Q
 - Build quotations with multiple line items (description, quantity, unit price, discount %)
 - Automatic subtotal, discount, tax, and grand total computation
 - Status workflow: DRAFT → READY → SENT → ACCEPTED / REJECTED / EXPIRED
-- Print-friendly quotation view
+- Print-friendly quotation view at `/quotations/[id]/print`
+- PDF download at `/api/quotations/[id]/pdf`
 - Quotation acceptance enforces Customer creation before Sales Order conversion
+- Quotation document inherits all Document Settings (logo, branding, terms, payment info)
 
 ### Customer Management
 
@@ -93,10 +95,12 @@ The system standardizes the entire sales workflow — Lead → Opportunity → Q
 
 ### Delivery Notes
 
-- Create from confirmed Sales Orders
-- Delivery requires full payment (`requireFullPayment: true`)
+- Create from Sales Orders via the "Create Delivery Note" button on SO detail page
+- Delivery requires full payment (`requireFullPayment: true`) — validated server-side
+- Accepts Sales Orders in CONFIRMED, FULFILLING, INVOICED, DELIVERED, or COMPLETED status
 - Track carrier and tracking number
-- Line items derived from Sales Order items
+- Line items derived from Sales Order items with remaining quantity calculation
+- Auto-transitions SO status (CONFIRMED/INVOICED → FULFILLING → DELIVERED)
 
 ### Pipeline Tracking
 
@@ -276,7 +280,7 @@ API endpoints: `/api/messages/conversations`, `/api/messages/send`, `/api/messag
 
 | Document | Generation | PDF |
 |---|---|---|
-| Quotation | Print view at `/quotations/[id]/print` | Planned |
+| Quotation | Print view at `/quotations/[id]/print` | `/api/quotations/[id]/pdf` |
 | Invoice | Print view at `/invoices/[id]/print` | `/api/invoices/[id]/pdf` |
 | Official Receipt | Print view at `/payments/[id]/print` | `/api/payments/[id]/pdf` |
 | Delivery Note | Planned | Planned |
@@ -361,7 +365,7 @@ src/
 │   │   ├── pipeline/             # Pipeline visualization
 │   │   ├── leads/                # Lead management (list, new, [id])
 │   │   ├── opportunities/        # Opportunity management
-│   │   ├── quotations/           # Quotation management + print
+│   │   ├── quotations/           # Quotation management + print + PDF download
 │   │   ├── customers/            # Customer management
 │   │   ├── sales-orders/         # Sales Order management
 │   │   ├── sales-invoices/       # Invoice management + print
@@ -376,6 +380,9 @@ src/
 │   │   └── layout.tsx            # Dashboard layout (sidebar, topbar)
 │   ├── api/                      # API routes
 │   │   ├── auth/[...nextauth]/   # Auth.js handler
+│   │   ├── invoices/[id]/pdf/    # Invoice PDF generation
+│   │   ├── quotations/[id]/pdf/  # Quotation PDF generation
+│   │   ├── payments/[id]/pdf/    # Official Receipt PDF generation
 │   │   ├── messages/             # Messaging API
 │   │   ├── pipeline/             # Pipeline search API
 │   │   └── upload/               # File upload (images, payment proofs)
@@ -589,7 +596,7 @@ The CRM is fully responsive across device sizes:
 - [x] My Profile (self-service info + password change)
 - [x] Audit Logs (scoped per role)
 - [x] Document Settings (logo, signature, prefixes, terms)
-- [x] PDF Generation (Invoices, Official Receipts via puppeteer-core)
+- [x] PDF Generation (Quotations, Invoices, Official Receipts via puppeteer-core)
 - [x] Messaging (floating widget, conversations, unread badge)
 - [x] Notifications (bell with unread count)
 - [x] Responsive UI (desktop through mobile)
@@ -602,7 +609,6 @@ The CRM is fully responsive across device sizes:
 
 - [ ] Multi-Business Architecture (schema scaffolded, single-tenant currently)
 - [ ] Advanced Dashboard Analytics (custom date ranges, exportable reports)
-- [ ] Quotation PDF generation (print view exists, PDF pending)
 - [ ] Delivery Note PDF generation
 
 ---
@@ -612,7 +618,7 @@ The CRM is fully responsive across device sizes:
 ### Near-Term
 
 - **Advanced Dashboard Analytics** — Custom date ranges, cohort analysis, exportable CSV/PDF reports
-- **Quotation & Delivery Note PDFs** — Extend the puppeteer pipeline to all document types
+- **Delivery Note PDFs** — Extend the puppeteer pipeline to delivery notes
 - **Email Integration** — Send quotations and invoices via email with tracking
 - **Task Management** — Assign follow-up tasks with due dates and reminders
 
