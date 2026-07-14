@@ -11,12 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 import { Plus, Trash2 } from "lucide-react";
 import { ProductDescriptionInput, type CatalogItem } from "@/components/quotations/product-description-input";
 
 type OppOption = { id: string; label: string };
 
-export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { opportunities: OppOption[]; defaultTaxRate: number; catalog: CatalogItem[] }) {
+type Prefill = {
+  opportunityId: string;
+  subject: string;
+  validUntil: string;
+  notes: string;
+  sourceLabel: string;
+};
+
+export function QuotationForm({ opportunities, defaultTaxRate, catalog, prefill }: { opportunities: OppOption[]; defaultTaxRate: number; catalog: CatalogItem[]; prefill?: Prefill }) {
   const [state, formAction] = useActionState<QuoteActionState, FormData>(
     createQuotationAction,
     { success: false }
@@ -25,13 +34,13 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
   const form = useForm<QuotationCreateInput>({
     resolver: zodResolver(quotationCreateSchema),
     defaultValues: {
-      opportunityId: "",
-      subject: "",
-      validUntil: "",
+      opportunityId: prefill?.opportunityId ?? "",
+      subject: prefill?.subject ?? "",
+      validUntil: prefill?.validUntil ?? "",
       currency: "PHP",
       discountTotal: 0,
       taxRate: defaultTaxRate,
-      notes: "",
+      notes: prefill?.notes ?? "",
       items: [{ description: "", quantity: 1, unitPrice: 0, discountPercent: 0 }],
     },
   });
@@ -66,13 +75,14 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-6">
+            {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Quotation" />}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Opportunity *</label>
                 <select
                   name="opportunityId"
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  defaultValue=""
+                  defaultValue={prefill?.opportunityId ?? ""}
                 >
                   <option value="">Select a won opportunity</option>
                   {opportunities.map((o) => (
@@ -96,7 +106,7 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog }: { oppo
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Valid Until *</label>
-                <Input type="date" name="validUntil" defaultValue={defaultValid} />
+                <Input type="date" name="validUntil" defaultValue={prefill?.validUntil ?? defaultValid} />
               </div>
               <FormField
                 control={form.control}

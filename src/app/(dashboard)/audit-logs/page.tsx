@@ -11,8 +11,9 @@ export default async function AuditLogsPage({
   const page = Number(params.page) || 1;
   const pageSize = Number(params.pageSize) || 20;
   const entityType = params.entityType as string | undefined;
+  const search = params.search as string | undefined;
 
-  const { data, total } = await listAuditLogs({ page, pageSize, entityType });
+  const { data, total } = await listAuditLogs({ page, pageSize, entityType, search });
   const totalPages = Math.ceil(total / pageSize);
 
   const serializableData = data.map((log) => ({
@@ -33,6 +34,7 @@ export default async function AuditLogsPage({
         pageSize={pageSize}
         total={total}
         totalPages={totalPages}
+        search={search}
       />
     </div>
   );

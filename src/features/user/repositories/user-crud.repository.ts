@@ -18,6 +18,7 @@ export async function findMany(params: {
       OR: [
         { name: { contains: params.search } },
         { email: { contains: params.search } },
+        { role: { name: { contains: params.search } } },
       ],
     }),
   };

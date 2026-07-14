@@ -13,7 +13,12 @@ export async function findMany(params: {
   search?: string;
 }) {
   const where: Prisma.RoleWhereInput = params.search
-    ? { name: { contains: params.search } }
+    ? {
+        OR: [
+          { name: { contains: params.search } },
+          { description: { contains: params.search } },
+        ],
+      }
     : {};
 
   const [data, total] = await Promise.all([

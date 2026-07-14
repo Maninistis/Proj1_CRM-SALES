@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { getById as getRoleById } from "@/features/role/services/role.service";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { MessagingCenter } from "@/features/messaging/components/messaging-center";
 
 export default async function DashboardLayout({
   children,
@@ -33,6 +34,7 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
+      <MessagingCenter />
     </div>
   );
 }

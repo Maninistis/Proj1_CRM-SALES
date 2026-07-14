@@ -25,17 +25,18 @@ export async function createCustomerAction(
 ): Promise<CustomerActionState> {
   const parsed = customerCreateSchema.safeParse({
     name: formData.get("name"),
-    email: formData.get("email") || undefined,
-    phone: formData.get("phone") || undefined,
-    taxId: formData.get("taxId") || undefined,
-    website: formData.get("website") || undefined,
-    creditLimit: Number(formData.get("creditLimit")) || undefined,
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    taxId: formData.get("taxId"),
+    website: formData.get("website"),
+    creditLimit: Number(String(formData.get("creditLimit")).replace(/,/g, "")),
     paymentTerms: Number(formData.get("paymentTerms")) || 30,
-    billingLine1: formData.get("billingLine1") || undefined,
-    billingLine2: formData.get("billingLine2") || undefined,
-    billingCity: formData.get("billingCity") || undefined,
-    billingState: formData.get("billingState") || undefined,
-    billingPostalCode: formData.get("billingPostalCode") || undefined,
+    leadId: formData.get("leadId") || undefined,
+    billingLine1: formData.get("billingLine1"),
+    billingLine2: formData.get("billingLine2"),
+    billingCity: formData.get("billingCity"),
+    billingState: formData.get("billingState"),
+    billingPostalCode: formData.get("billingPostalCode"),
     billingCountry: formData.get("billingCountry") || "Philippines",
   });
 

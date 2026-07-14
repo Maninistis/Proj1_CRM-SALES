@@ -12,11 +12,22 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 import { Plus, Trash2 } from "lucide-react";
 
 type CustomerOption = { id: string; name: string };
 
-export function SOForm({ customers, defaultTaxRate, catalog }: { customers: CustomerOption[]; defaultTaxRate: number; catalog: CatalogItem[] }) {
+type Prefill = {
+  customerId: string;
+  quotationId: string;
+  discountTotal: number;
+  taxRate: number;
+  notes: string;
+  items: Array<{ description: string; quantity: number; unitPrice: number; discountPercent: number }>;
+  sourceLabel: string;
+};
+
+export function SOForm({ customers, defaultTaxRate, catalog, prefill }: { customers: CustomerOption[]; defaultTaxRate: number; catalog: CatalogItem[]; prefill?: Prefill }) {
   const [state, formAction] = useActionState<SOActionState, FormData>(createSOAction, { success: false });
 
   const today = new Date().toISOString().split("T")[0];
@@ -24,9 +35,9 @@ export function SOForm({ customers, defaultTaxRate, catalog }: { customers: Cust
   const form = useForm<SOCreateInput>({
     resolver: zodResolver(soCreateSchema),
     defaultValues: {
-      customerId: "", quotationId: "", orderDate: today, expectedDeliveryDate: "",
-      discountTotal: 0, taxRate: defaultTaxRate, notes: "",
-      items: [{ description: "", quantity: 1, unitPrice: 0, discountPercent: 0 }],
+      customerId: prefill?.customerId ?? "", quotationId: prefill?.quotationId ?? "", orderDate: today, expectedDeliveryDate: "",
+      discountTotal: prefill?.discountTotal ?? 0, taxRate: prefill?.taxRate ?? defaultTaxRate, notes: prefill?.notes ?? "",
+      items: prefill?.items?.length ? prefill.items : [{ description: "", quantity: 1, unitPrice: 0, discountPercent: 0 }],
     },
   });
 
@@ -47,10 +58,14 @@ export function SOForm({ customers, defaultTaxRate, catalog }: { customers: Cust
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-6">
+            {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Sales Order" />}
+            {prefill?.quotationId && (
+              <input type="hidden" name="quotationId" value={prefill.quotationId} />
+            )}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Customer *</label>
-                <select name="customerId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue="">
+                <select name="customerId" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" defaultValue={prefill?.customerId ?? ""}>
                   <option value="">Select an active customer</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>

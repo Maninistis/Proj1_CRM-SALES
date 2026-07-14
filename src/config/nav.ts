@@ -40,7 +40,7 @@ export const navGroups: NavGroup[] = [
         permission: "dashboard:read",
       },
       {
-        label: "Pipeline",
+        label: "Pipeline Search",
         href: "/pipeline",
         icon: Workflow,
         permission: "leads:read",

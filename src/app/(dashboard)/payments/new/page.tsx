@@ -9,7 +9,7 @@ export default async function NewPaymentPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const invoiceId = params.inv as string;
+  const invoiceId = (params.inv as string) || (params.invoiceId as string);
 
   if (!invoiceId) {
     return (

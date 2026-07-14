@@ -26,6 +26,7 @@ export async function findMany(params: {
         { firstName: { contains: params.search } },
         { lastName: { contains: params.search } },
         { email: { contains: params.search } },
+        { phone: { contains: params.search } },
         { company: { contains: params.search } },
         { documentNo: { contains: params.search } },
       ],

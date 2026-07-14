@@ -55,9 +55,10 @@ type Props = {
   pageSize: number;
   total: number;
   totalPages: number;
+  search?: string;
 };
 
-export function AuditLogTable({ data, page, pageSize, total, totalPages }: Props) {
+export function AuditLogTable({ data, page, pageSize, total, totalPages, search }: Props) {
   return (
     <DataTable
       columns={columns}
@@ -66,6 +67,16 @@ export function AuditLogTable({ data, page, pageSize, total, totalPages }: Props
       pageSize={pageSize}
       total={total}
       totalPages={totalPages}
+      searchPlaceholder="Search audit logs..."
+      searchValue={search}
+      searchFields={(row) => `${row.action} ${row.entityType} ${row.entityId} ${row.userName ?? ""}`}
+      onSearchChange={(v) => {
+        const url = new URL(window.location.href);
+        if (v) url.searchParams.set("search", v);
+        else url.searchParams.delete("search");
+        url.searchParams.set("page", "1");
+        window.location.href = url.toString();
+      }}
       onPaginationChange={(p) => {
         const url = new URL(window.location.href);
         url.searchParams.set("page", String(p));

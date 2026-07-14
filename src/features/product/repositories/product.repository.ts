@@ -13,6 +13,7 @@ export async function findMany(params: {
       OR: [
         { name: { contains: params.search } },
         { description: { contains: params.search } },
+        { category: { contains: params.search } },
       ],
     }),
   };

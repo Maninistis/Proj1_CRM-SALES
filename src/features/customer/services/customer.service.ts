@@ -45,6 +45,7 @@ export async function create_(input: {
   website?: string;
   creditLimit?: number;
   paymentTerms: number;
+  leadId?: string;
   billingLine1?: string;
   billingLine2?: string;
   billingCity?: string;
@@ -71,6 +72,7 @@ export async function create_(input: {
     website: input.website,
     creditLimit: input.creditLimit,
     paymentTerms: input.paymentTerms,
+    leadId: input.leadId,
     createdById: session!.user.userId,
     billingAddress: input.billingLine1
       ? {
@@ -123,6 +125,7 @@ export async function convertFromOpportunity(opportunityId: string) {
     name: customerName,
     email: lead?.email || undefined,
     phone: lead?.phone || undefined,
+    leadId: opp.leadId,
     paymentTerms: 30,
     createdById: session!.user.userId,
   });

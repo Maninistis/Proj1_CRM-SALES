@@ -7,6 +7,7 @@ export async function list(params: {
   pageSize: number;
   entityType?: string;
   userId?: string;
+  search?: string;
 }) {
   const session = await auth();
   requirePermission(session, "audit-logs:read");

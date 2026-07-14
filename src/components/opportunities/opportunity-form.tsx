@@ -13,11 +13,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 
 type LeadOption = { id: string; label: string };
 type UserOption = { id: string; name: string };
 
-export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: UserOption[] }) {
+type Prefill = {
+  leadId: string;
+  title: string;
+  assignedToId: string;
+  sourceLabel: string;
+};
+
+export function OpportunityForm({ leads, users, prefill }: { leads: LeadOption[]; users: UserOption[]; prefill?: Prefill }) {
   const [state, formAction] = useActionState<OpportunityActionState, FormData>(
     createOpportunityAction,
     { success: false }
@@ -26,12 +34,12 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
   const form = useForm<OpportunityCreateInput>({
     resolver: zodResolver(opportunityCreateSchema),
     defaultValues: {
-      leadId: "",
-      title: "",
+      leadId: prefill?.leadId ?? "",
+      title: prefill?.title ?? "",
       description: "",
       estimatedValue: 0,
       expectedCloseDate: "",
-      assignedToId: "",
+      assignedToId: prefill?.assignedToId ?? "",
     },
   });
 
@@ -41,6 +49,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
+            {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Opportunity" />}
             <FormField
               control={form.control}
               name="leadId"
@@ -111,7 +120,7 @@ export function OpportunityForm({ leads, users }: { leads: LeadOption[]; users: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assigned To</FormLabel>
-                  <Select items={leads.length > 0 ? buildItems(leads.map(l => ({id: l.id, name: l.label}))) : {}} onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select items={buildItems(users.map(u => ({ id: u.id, name: u.name })))} onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {users.map((u) => (

@@ -12,14 +12,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 import { Plus, Trash2 } from "lucide-react";
 
-export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultTaxRate, catalog }: {
+type Prefill = {
+  discountTotal: number;
+  taxRate: number;
+  notes: string;
+  items: Array<{ description: string; quantity: number; unitPrice: number; discountPercent: number }>;
+  sourceLabel: string;
+};
+
+export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultTaxRate, catalog, prefill }: {
   salesOrderId: string;
   soDocumentNo: string;
   customerName: string;
   defaultTaxRate: number;
   catalog: CatalogItem[];
+  prefill?: Prefill;
 }) {
   const [state, formAction] = useActionState<InvActionState, FormData>(createInvoiceAction, { success: false });
   const today = new Date().toISOString().split("T")[0];
@@ -31,10 +41,10 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
       salesOrderId,
       issueDate: today,
       dueDate,
-      discountTotal: 0,
-      taxRate: defaultTaxRate,
-      notes: "",
-      items: [{ description: "", quantity: 1, unitPrice: 0, discountPercent: 0 }],
+      discountTotal: prefill?.discountTotal ?? 0,
+      taxRate: prefill?.taxRate ?? defaultTaxRate,
+      notes: prefill?.notes ?? "",
+      items: prefill?.items?.length ? prefill.items : [{ description: "", quantity: 1, unitPrice: 0, discountPercent: 0 }],
     },
   });
 
@@ -55,6 +65,7 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
+            {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Invoice" />}
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
             <div className="grid sm:grid-cols-3 gap-4">
               <FormField control={form.control} name="issueDate" render={({ field }) => (

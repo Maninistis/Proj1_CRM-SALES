@@ -72,6 +72,7 @@ export async function create(data: {
   website?: string;
   creditLimit?: number;
   paymentTerms: number;
+  leadId?: string;
   createdById: string;
   billingAddress?: {
     line1: string;
@@ -92,6 +93,7 @@ export async function create(data: {
       website: data.website || null,
       creditLimit: data.creditLimit || null,
       paymentTerms: data.paymentTerms,
+      leadId: data.leadId || null,
       createdById: data.createdById,
       status: "ACTIVE",
       addresses: data.billingAddress?.line1

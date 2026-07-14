@@ -30,6 +30,9 @@ export async function findMany(params: {
         { documentNo: { contains: params.search } },
         { subject: { contains: params.search } },
         { opportunity: { title: { contains: params.search } } },
+        { opportunity: { lead: { firstName: { contains: params.search } } } },
+        { opportunity: { lead: { lastName: { contains: params.search } } } },
+        { opportunity: { lead: { company: { contains: params.search } } } },
       ],
     }),
   };

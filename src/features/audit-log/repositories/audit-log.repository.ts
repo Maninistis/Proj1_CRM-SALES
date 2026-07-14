@@ -7,10 +7,18 @@ export async function findMany(params: {
   pageSize: number;
   entityType?: string;
   userId?: string;
+  search?: string;
 }) {
   const where: Prisma.AuditLogWhereInput = {
     ...(params.entityType && { entityType: params.entityType }),
     ...(params.userId && { userId: params.userId }),
+    ...(params.search && {
+      OR: [
+        { action: { contains: params.search } },
+        { entityType: { contains: params.search } },
+        { entityId: { contains: params.search } },
+      ],
+    }),
   };
 
   const [data, total] = await Promise.all([

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 
 export function PaymentForm({
   invoiceId,
@@ -53,6 +54,7 @@ export function PaymentForm({
         </div>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
+            <PrefillBanner sourceLabel={`Invoice #${invoiceNo}`} targetLabel="Payment" />
             <input type="hidden" name="salesInvoiceId" value={invoiceId} />
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="amount" render={({ field }) => (

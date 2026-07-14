@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrefillBanner } from "@/components/forms/prefill-banner";
 import { Plus, Trash2 } from "lucide-react";
 
 type SOItem = {
@@ -51,6 +52,7 @@ export function DNForm({ salesOrderId, soDocumentNo, soItems }: { salesOrderId: 
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-4">
+            <PrefillBanner sourceLabel={`Sales Order #${soDocumentNo}`} targetLabel="Delivery Note" />
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
 
             <div className="grid sm:grid-cols-3 gap-4">

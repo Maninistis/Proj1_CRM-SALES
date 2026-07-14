@@ -10,7 +10,7 @@ export default async function NewDNPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const salesOrderId = params.so as string;
+  const salesOrderId = (params.so as string) || (params.salesOrderId as string);
 
   if (!salesOrderId) {
     return (
