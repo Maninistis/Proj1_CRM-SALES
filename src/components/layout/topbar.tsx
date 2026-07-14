@@ -97,7 +97,7 @@ export function Topbar({ permissions }: { permissions: string[] }) {
 
       <GlobalSearch />
 
-      <div className="flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-3 md:ml-0">
         <TopbarNotifications />
         <TopbarSystemMenu permissions={permissions} />
       </div>
