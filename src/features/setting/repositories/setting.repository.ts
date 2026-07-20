@@ -1,19 +1,20 @@
 import { prisma } from "@/lib/prisma";
 
-export async function findAll() {
+export async function findAll(businessId: string) {
   return prisma.setting.findMany({
+    where: { businessId },
     orderBy: { category: "asc" },
   });
 }
 
-export async function findByKey(key: string) {
-  return prisma.setting.findUnique({ where: { key } });
+export async function findByKey(key: string, businessId: string) {
+  return prisma.setting.findUnique({ where: { key_businessId: { key, businessId } } });
 }
 
-export async function upsert(key: string, value: string, category: string, updatedById: string) {
+export async function upsert(key: string, value: string, category: string, updatedById: string, businessId: string) {
   return prisma.setting.upsert({
-    where: { key },
+    where: { key_businessId: { key, businessId } },
     update: { value, category, updatedById },
-    create: { key, value, category, updatedById },
+    create: { key, value, category, updatedById, businessId },
   });
 }

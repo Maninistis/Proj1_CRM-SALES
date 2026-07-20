@@ -35,14 +35,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "opportunities:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const opp = await findById(id, scopeUserId);
+  const opp = await findById(id, scopeUserId, session!.user.businessId!);
   if (!opp) throw new NotFoundError("Opportunity", id);
   return opp;
 }
@@ -72,7 +72,7 @@ export async function create_(input: {
     expectedCloseDate: new Date(input.expectedCloseDate),
     assignedToId: input.assignedToId,
     createdById: session!.user.userId,
-  });
+  businessId: session!.user.businessId!,});
 
   await audit({
     entityType: "Opportunity",
@@ -123,7 +123,7 @@ export async function convertLead(
     expectedCloseDate: new Date(input.expectedCloseDate),
     assignedToId: lead.assignedToId ?? undefined,
     createdById: session!.user.userId,
-  });
+  businessId: session!.user.businessId!,});
 
   await audit({
     entityType: "Opportunity",
@@ -157,7 +157,7 @@ export async function update_(
   const session = await auth();
   requirePermission(session, "opportunities:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   if (
@@ -209,7 +209,7 @@ export async function advanceStage(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   if (existing.status !== "OPEN") {
@@ -239,7 +239,7 @@ export async function closeWon(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   if (!canCloseWon(existing.stage, existing.status)) {
@@ -266,7 +266,7 @@ export async function closeLost(id: string, reason?: string) {
   const session = await auth();
   requirePermission(session, "opportunities:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   if (!canCloseLost(existing.status)) {
@@ -294,7 +294,7 @@ export async function reopen(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   if (!canReopen(existing.status)) {
@@ -323,7 +323,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
 
   await softDelete(id);
@@ -345,7 +345,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "opportunities:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Opportunity", id);
   if (!existing.deletedAt) {
     throw new ConflictError("Opportunity is not deleted");

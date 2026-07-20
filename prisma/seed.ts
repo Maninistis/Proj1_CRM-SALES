@@ -14,11 +14,13 @@ function daysAgo(days: number): Date {
   return d;
 }
 
+let BIZ_ID = "";
+
 async function genDocNo(prefix: string): Promise<string> {
   const c = await prisma.counter.upsert({
-    where: { prefix },
+    where: { prefix_businessId: { prefix, businessId: BIZ_ID } },
     update: { sequence: { increment: 1 } },
-    create: { prefix, sequence: 1 },
+    create: { prefix, sequence: 1, businessId: BIZ_ID },
   });
   return `${prefix}-${String(c.sequence).padStart(4, "0")}`;
 }
@@ -84,8 +86,17 @@ async function main() {
     for (const code of permCodes) { const p = await prisma.permission.findUnique({ where: { code } }); if (p) await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: role.id, permissionId: p.id } }, update: {}, create: { roleId: role.id, permissionId: p.id } }); }
   }
 
-  const defaultSettings = [{ key: "company_name", value: "CRM Sales Inc.", category: "general" },{ key: "default_currency", value: "PHP", category: "general" },{ key: "tax_rate", value: "0.12", category: "tax" },{ key: "payment_terms_days", value: "30", category: "general" }];
-  for (const s of defaultSettings) await prisma.setting.upsert({ where: { key: s.key }, update: {}, create: s });
+  await prisma.businessUser.deleteMany();
+  await prisma.business.deleteMany();
+  const defaultBiz = await prisma.business.create({ data: { name: "Apex Business Solutions" } });
+  const demoBiz = await prisma.business.create({ data: { name: "Apex Logistics" } });
+  const bizId = defaultBiz.id;
+  BIZ_ID = bizId;
+  console.log(`Businesses: 2 (${defaultBiz.name}, ${demoBiz.name})`);
+
+  const defaultSettings = [{ key: "company_name", value: "CRM Sales Inc.", category: "general" },{ key: "default_currency", value: "PHP", category: "general" },{ key: "tax_rate", value: "0.12", category: "tax" },{ key: "payment_terms_days", value: "30", category: "general" },{ key: "onboarding_complete", value: "true", category: "system" }];
+  for (const s of defaultSettings) await prisma.setting.upsert({ where: { key_businessId: { key: s.key, businessId: bizId } }, update: {}, create: { ...s, businessId: bizId } });
+  await prisma.setting.upsert({ where: { key_businessId: { key: "onboarding_complete", businessId: demoBiz.id } }, update: {}, create: { key: "onboarding_complete", value: "true", category: "system", businessId: demoBiz.id } });
 
   const adminRole = (await prisma.role.findUnique({ where: { name: "Admin" } }))!;
   const repRole = (await prisma.role.findUnique({ where: { name: "Sales Rep" } }))!;
@@ -105,10 +116,14 @@ async function main() {
   }
   const [adminId, rep1Id, rep2Id, mgrId] = ["admin@crm.local","john.cruz@crm.local","maria.santos@crm.local","carlos.reyes@crm.local"].map(e => userIds[e]);
   const repIds = [rep1Id, rep2Id];
-  console.log(`Users: 4`);
+  for (const uid of [adminId, rep1Id, rep2Id, mgrId]) {
+    await prisma.businessUser.create({ data: { businessId: bizId, userId: uid } });
+  }
+  await prisma.businessUser.create({ data: { businessId: demoBiz.id, userId: adminId } });
+  console.log(`Users: 4, Business assignments: 5`);
 
   await prisma.product.deleteMany();
-  for (const p of PRODUCTS) await prisma.product.create({ data: { name: p.name, description: p.name, defaultPrice: p.price, category: p.category, isActive: true } });
+  for (const p of PRODUCTS) await prisma.product.create({ data: { businessId: bizId, name: p.name, description: p.name, defaultPrice: p.price, category: p.category, isActive: true } });
   const allProducts = await prisma.product.findMany();
   console.log(`Products: ${allProducts.length}`);
 
@@ -123,6 +138,8 @@ async function main() {
   await prisma.quotationItem.deleteMany(); await prisma.quotation.deleteMany();
   await prisma.customerContact.deleteMany(); await prisma.customerAddress.deleteMany(); await prisma.customer.deleteMany();
   await prisma.opportunity.deleteMany(); await prisma.lead.deleteMany(); await prisma.auditLog.deleteMany();
+  await prisma.message.deleteMany(); await prisma.conversationParticipant.deleteMany(); await prisma.conversation.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.counter.updateMany({ data: { sequence: 0 } });
 
   let leadCount = 0;
@@ -135,7 +152,7 @@ async function main() {
     const created = daysAgo(ageDays);
     const status = i < 4 ? "NEW" : i < 10 ? "CONTACTED" : i < 40 ? "QUALIFIED" : "DISQUALIFIED";
     const slug = company.toLowerCase().replace(/[^a-z]/g,"").slice(0,12);
-    const lead = await prisma.lead.create({ data: {
+    const lead = await prisma.lead.create({ data: { businessId: bizId,
       documentNo: await genDocNo("LEAD"), firstName: fn, lastName: ln,
       email: `${fn.toLowerCase()}.${ln.toLowerCase()}@${slug}.com.ph`,
       phone: `+63 917 ${String(5000000+i*137).slice(0,3)} ${String(4000+i*11).slice(0,4)}`,
@@ -157,7 +174,7 @@ async function main() {
     const closeDate = new Date(created.getTime()+30*86400000);
     const isWon = i < 22, isLost = i >= 22 && i < 26;
     const value = 50000 + (i*37000)%1800000;
-    await prisma.opportunity.create({ data: {
+    await prisma.opportunity.create({ data: { businessId: bizId,
       documentNo: await genDocNo("OPP"), leadId: lead.id,
       title: `${lead.company} — CRM Solution`, description: `${lead.company} requires CRM implementation.`,
       estimatedValue: value, expectedCloseDate: closeDate,
@@ -182,7 +199,7 @@ async function main() {
     const sub = Math.round(lt.reduce((a,b)=>a+b,0)*100)/100;
     const tax = Math.round(sub*0.12*100)/100;
     const gt = Math.round((sub+tax)*100)/100;
-    const q = await prisma.quotation.create({ data: {
+    const q = await prisma.quotation.create({ data: { businessId: bizId,
       documentNo: await genDocNo("QUO"), opportunityId: (await prisma.opportunity.findFirst({where:{title:{contains:opp.company}},orderBy:{createdAt:"desc"}}))!.id,
       status, subject: `${opp.company} — Proposal`, validUntil: new Date(created.getTime()+30*86400000),
       currency: "PHP", subtotal: sub, discountTotal: 0, taxRate: 0.12, taxTotal: tax, grandTotal: gt,
@@ -197,7 +214,7 @@ async function main() {
   for (let i = 0; i < acceptedQuotes.length; i++) {
     const q = acceptedQuotes[i]; const created = daysAgo(90-Math.floor((i/acceptedQuotes.length)*80));
     const city = CITIES[i%CITIES.length]; const slug = q.company.toLowerCase().replace(/[^a-z]/g,"").slice(0,12);
-    const cust = await prisma.customer.create({ data: {
+    const cust = await prisma.customer.create({ data: { businessId: bizId,
       documentNo: await genDocNo("CUST"), name: q.company, email: `finance@${slug}.com.ph`,
       phone: `+63 2 8${String(5000000+i*1337).slice(0,7)}`, taxId: `${String(100+i).padStart(3,"0")}-${String(200+i).padStart(3,"0")}-${String(300+i).padStart(3,"0")}-000`,
       website: `www.${slug}.com.ph`, status: "ACTIVE", creditLimit: 5000000,
@@ -212,7 +229,7 @@ async function main() {
   }
   for (let i = 0; i < 3; i++) {
     const city = CITIES[i+5]; const name = ["Apex Global Inc","Titan Industries","Meridian Corp"][i];
-    const cust = await prisma.customer.create({ data: { documentNo: await genDocNo("CUST"), name, email:`info@${name.toLowerCase().replace(/[^a-z]/g,"")}.com`, phone:"+63 2 8444 1000", status:"ACTIVE", creditLimit:3000000, paymentTerms:30, createdById:adminId,
+    const cust = await prisma.customer.create({ data: { businessId: bizId, documentNo: await genDocNo("CUST"), name, email:`info@${name.toLowerCase().replace(/[^a-z]/g,"")}.com`, phone:"+63 2 8444 1000", status:"ACTIVE", creditLimit:3000000, paymentTerms:30, createdById:adminId,
       addresses:{create:[{type:"BILLING",line1:"100 Corporate Center",city:city.city,state:city.state,postalCode:city.zip,country:"Philippines"}]} }});
     customers.push({id:cust.id,name,terms:30,repId:repIds[i%2]});
   }
@@ -229,7 +246,7 @@ async function main() {
     const tax = Math.round(sub*0.12*100)/100;
     const gt = Math.round((sub+tax)*100)/100;
     const status = i<12?"COMPLETED":i<17?"DELIVERED":i<19?"FULFILLING":"CONFIRMED";
-    const so = await prisma.salesOrder.create({ data: {
+    const so = await prisma.salesOrder.create({ data: { businessId: bizId,
       documentNo: await genDocNo("SO"), customerId: cust.id, status,
       orderDate: created, expectedDeliveryDate: new Date(created.getTime()+14*86400000),
       subtotal: sub, discountTotal: 0, taxRate: 0.12, taxTotal: tax, grandTotal: gt,
@@ -249,7 +266,7 @@ async function main() {
     if (!delItems.length) continue;
     const carriers = ["LBC Express","JRS Express","2GO Logistics","Air21"];
     const status = so.status==="COMPLETED"?"ACKNOWLEDGED":so.status==="DELIVERED"?"DELIVERED":"DISPATCHED";
-    await prisma.deliveryNote.create({ data: {
+    await prisma.deliveryNote.create({ data: { businessId: bizId,
       documentNo: await genDocNo("DN"), salesOrderId: so.id, status,
       deliveryDate: status!=="DISPATCHED"?new Date(created.getTime()+2*86400000):null,
       carrier: carriers[i%4], trackingNumber: `${carriers[i%4].split(" ")[0]}-${500000+i*137}`,
@@ -273,7 +290,7 @@ async function main() {
     else if(dueDate<new Date()){invStatus="OVERDUE";}
     const cust = await prisma.customer.findUnique({where:{id:so.custId},include:{addresses:{where:{type:"BILLING"}}}});
     const b = cust?.addresses[0];
-    const inv = await prisma.salesInvoice.create({ data: {
+    const inv = await prisma.salesInvoice.create({ data: { businessId: bizId,
       documentNo: await genDocNo("INV"), salesOrderId: so.id, customerId: so.custId,
       customerName: so.custName, customerEmail: cust?.email, customerPhone: cust?.phone,
       customerAddress: b?[b.line1,b.line2,b.city,b.state,b.postalCode,b.country].filter(Boolean).join(", "):null,
@@ -288,7 +305,7 @@ async function main() {
       const pd = paidAt ?? created;
       const mk = `${pd.getFullYear()}-${String(pd.getMonth()+1).padStart(2,"0")}`;
       const methods = ["BANK_TRANSFER","GCASH","CHECK","CASH"];
-      await prisma.payment.create({ data: {
+      await prisma.payment.create({ data: { businessId: bizId,
         documentNo: await genDocNo("PAY"), salesInvoiceId: inv.id, customerId: so.custId, customerName: so.custName,
         amount: paidAmt, paymentMethod: methods[i%4], referenceNumber: `REF-${500000+i*99}`,
         paymentDate: pd, status: "RECEIVED", notes: paidAmt>=so.grandTotal?"Full payment.":"50% deposit.",
@@ -301,7 +318,7 @@ async function main() {
       const pd2 = new Date(created.getTime()+20*86400000);
       const rem = so.grandTotal-paidAmt;
       const mk2 = `${pd2.getFullYear()}-${String(pd2.getMonth()+1).padStart(2,"0")}`;
-      await prisma.payment.create({ data: {
+      await prisma.payment.create({ data: { businessId: bizId,
         documentNo: await genDocNo("PAY"), salesInvoiceId: inv.id, customerId: so.custId, customerName: so.custName,
         amount: rem, paymentMethod: "BANK_TRANSFER", referenceNumber: `REF-${600000+i*77}`,
         paymentDate: pd2, status: "RECEIVED", notes: "Balance payment.", receivedById: mgrId, createdAt: pd2,
@@ -317,7 +334,7 @@ async function main() {
   const actions = ["CREATE","UPDATE","DELETE","TRANSITION"];
   const uids = [adminId,rep1Id,rep2Id,mgrId];
   for (let i = 0; i < 200; i++) {
-    await prisma.auditLog.create({ data: {
+    await prisma.auditLog.create({ data: { businessId: bizId,
       entityType: entities[i%entities.length], entityId: `seed-${i}`,
       action: actions[i%actions.length], userId: uids[i%uids.length],
       newState: { note: `Demo ${actions[i%actions.length]} ${entities[i%entities.length]}` },
@@ -325,6 +342,49 @@ async function main() {
     }});
   }
   console.log(`Audit Logs: 200`);
+
+  const dm1 = await prisma.conversation.create({ data: { businessId: bizId, isGroup: false, participants: { create: [{ userId: mgrId, lastReadAt: daysAgo(0) }, { userId: rep1Id, lastReadAt: daysAgo(1) }] } } });
+  const m1a = new Date(daysAgo(1).getTime() + 2 * 3600000);
+  const m1b = new Date(m1a.getTime() + 5 * 60000);
+  await prisma.message.create({ data: { conversationId: dm1.id, senderId: rep1Id, content: "Hi Carlos, got a question about the Apex lead.", createdAt: m1a } });
+  await prisma.message.create({ data: { conversationId: dm1.id, senderId: mgrId, content: "Sure John, what do you need?", createdAt: m1b } });
+  await prisma.conversation.update({ where: { id: dm1.id }, data: { lastMessageAt: m1b } });
+
+  const grp = await prisma.conversation.create({ data: { businessId: bizId, isGroup: true, name: "Sales Team", createdById: mgrId, participants: { create: [{ userId: mgrId, lastReadAt: daysAgo(0) }, { userId: rep1Id, lastReadAt: daysAgo(0) }, { userId: rep2Id, lastReadAt: daysAgo(1) }, { userId: adminId, lastReadAt: daysAgo(2) }] } } });
+  const g1 = new Date(daysAgo(2).getTime() + 3 * 3600000);
+  const g2 = new Date(g1.getTime() + 10 * 60000);
+  const g3 = new Date(g2.getTime() + 8 * 60000);
+  await prisma.message.create({ data: { conversationId: grp.id, senderId: mgrId, content: "Team, let's sync on the Q3 pipeline targets this week.", createdAt: g1 } });
+  await prisma.message.create({ data: { conversationId: grp.id, senderId: rep2Id, content: "I'm free Thursday afternoon.", createdAt: g2 } });
+  await prisma.message.create({ data: { conversationId: grp.id, senderId: rep1Id, content: "Thursday works for me too.", createdAt: g3 } });
+  await prisma.conversation.update({ where: { id: grp.id }, data: { lastMessageAt: g3 } });
+  console.log(`Conversations: 2 (1 direct + 1 group), Messages: 5`);
+
+  const notifBase = [
+    { userId: adminId, type: "payment_received", title: "Payment Received", message: "₱1,000,000 received for INV-0001 (Pacific Marine Supply)", readAt: null, ago: 0.02 },
+    { userId: adminId, type: "customer_created", title: "New Customer", message: "Diamond Bank Technologies (CUST-0003) was added", readAt: null, ago: 0.1 },
+    { userId: adminId, type: "quotation_accepted", title: "Quotation Accepted", message: "QUO-0005 was accepted", readAt: daysAgo(1), ago: 1 },
+    { userId: adminId, type: "sales_order_created", title: "New Sales Order", message: "SO-0003 (Falcon Security) was created", readAt: daysAgo(2), ago: 2 },
+    { userId: mgrId, type: "lead_assigned", title: "Lead Assigned", message: "Juan Cruz (LEAD-0006) was assigned to John Cruz", readAt: null, ago: 0.05 },
+    { userId: mgrId, type: "payment_received", title: "Payment Received", message: "₱500,000 received for INV-0003", readAt: null, ago: 0.5 },
+    { userId: mgrId, type: "quotation_rejected", title: "Quotation Rejected", message: "QUO-0008 was rejected", readAt: daysAgo(1), ago: 1.5 },
+    { userId: rep1Id, type: "lead_assigned", title: "Lead Assigned to You", message: "Maria Garcia (LEAD-0012) was assigned to you", readAt: null, ago: 0.08 },
+    { userId: rep1Id, type: "invoice_due_soon", title: "Invoice Due Soon", message: "INV-0016 is due within 3 days", readAt: null, ago: 0.3 },
+    { userId: rep1Id, type: "message_received", title: "New Message", message: "Carlos Reyes: Check the Apex lead when you get a chance", readAt: daysAgo(0.5), ago: 0.5 },
+    { userId: rep2Id, type: "added_to_group", title: "Added to Group", message: "You were added to \"Sales Team\"", readAt: null, ago: 0.2 },
+    { userId: rep2Id, type: "quotation_expiring", title: "Quotation Expiring Soon", message: "QUO-0015 expires within 3 days", readAt: null, ago: 1 },
+  ];
+  for (const n of notifBase) {
+    await prisma.notification.create({ data: { businessId: bizId,
+      userId: n.userId, type: n.type, title: n.title, message: n.message,
+      entityType: n.type.split("_")[0] === "lead" ? "Lead" : n.type.split("_")[0] === "payment" ? "Payment" : n.type.split("_")[0] === "quotation" ? "Quotation" : n.type.split("_")[0] === "sales" ? "SalesOrder" : n.type.split("_")[0] === "invoice" ? "Invoice" : n.type.split("_")[0] === "customer" ? "Customer" : null,
+      entityId: `seed-${n.type}`,
+      link: null,
+      readAt: n.readAt,
+      createdAt: daysAgo(n.ago),
+    }});
+  }
+  console.log(`Notifications: ${notifBase.length}`);
 
   console.log("\n=== Revenue by Month ===");
   let totalRev = 0;

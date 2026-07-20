@@ -8,18 +8,34 @@ import { navGroups } from "@/config/nav";
 import { hasPermission } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { SidebarProfile, type SidebarUserProfile } from "@/components/layout/sidebar-profile";
-import { SidebarBrand } from "@/components/layout/sidebar-brand";
+import { BusinessSwitcher } from "@/components/layout/business-switcher";
 
 type SessionUser = { permissions: string[] };
+
+type BusinessItem = {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+};
 
 const STORAGE_KEY = "sidebar-collapsed";
 
 export function Sidebar({
   user,
   profile,
+  businesses,
+  currentBusinessId,
+  currentBusinessName,
+  canManageBusinesses,
+  isGlobalView = false,
 }: {
   user: SessionUser;
   profile: SidebarUserProfile;
+  businesses: BusinessItem[];
+  currentBusinessId: string | null;
+  currentBusinessName: string;
+  canManageBusinesses: boolean;
+  isGlobalView?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -52,9 +68,15 @@ export function Sidebar({
   const filteredGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) =>
-        hasPermission(user.permissions, item.permission)
-      ),
+      items: group.items.filter((item) => {
+        if (isGlobalView) {
+          return (
+            (item.href === "/dashboard" || item.href === "/pipeline") &&
+            hasPermission(user.permissions, item.permission)
+          );
+        }
+        return hasPermission(user.permissions, item.permission);
+      }),
     }))
     .filter((g) => g.items.length > 0);
 
@@ -117,8 +139,14 @@ export function Sidebar({
           collapsed ? "w-[72px]" : "w-[230px]"
         )}
       >
-        {/* Branding */}
-        <SidebarBrand collapsed={collapsed} />
+        {/* Business Switcher */}
+        <BusinessSwitcher
+          businesses={businesses}
+          currentBusinessId={currentBusinessId}
+          currentBusinessName={currentBusinessName}
+          canManageBusinesses={canManageBusinesses}
+          collapsed={collapsed}
+        />
 
         {/* Navigation — scrolls independently when content exceeds viewport */}
         <div className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
@@ -137,15 +165,13 @@ export function Sidebar({
             onClick={() => setMobileOpen(false)}
           />
           <aside className="fixed left-0 top-0 z-50 flex h-full w-[230px] flex-col bg-sidebar lg:hidden">
-            <div className="flex h-16 shrink-0 items-center justify-between">
-              <SidebarBrand />
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="text-white/50 hover:text-white"
-                aria-label="Close menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="shrink-0">
+              <BusinessSwitcher
+                businesses={businesses}
+                currentBusinessId={currentBusinessId}
+                currentBusinessName={currentBusinessName}
+                canManageBusinesses={canManageBusinesses}
+              />
             </div>
             <div className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
               {renderNav(false)}

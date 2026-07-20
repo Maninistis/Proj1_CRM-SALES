@@ -6,13 +6,13 @@ import { findAll, findByKey, upsert } from "../repositories/setting.repository";
 export async function list() {
   const session = await auth();
   requirePermission(session, "settings:read");
-  return findAll();
+  return findAll(session!.user.businessId ?? "");
 }
 
 export async function get(key: string) {
   const session = await auth();
   requirePermission(session, "settings:read");
-  return findByKey(key);
+  return findByKey(key, session!.user.businessId ?? "");
 }
 
 export async function updateMany(
@@ -20,10 +20,11 @@ export async function updateMany(
 ) {
   const session = await auth();
   requirePermission(session, "settings:update");
+  const businessId = session!.user.businessId ?? "";
 
   for (const s of settings) {
-    const existing = await findByKey(s.key);
-    await upsert(s.key, s.value, s.category, session!.user.userId);
+    const existing = await findByKey(s.key, businessId);
+    await upsert(s.key, s.value, s.category, session!.user.userId, businessId);
 
     await audit({
       entityType: "Setting",

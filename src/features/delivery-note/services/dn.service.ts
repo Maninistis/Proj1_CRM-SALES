@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -26,14 +27,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "delivery-notes:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "delivery-notes:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const dn = await findById(id, scopeUserId);
+  const dn = await findById(id, scopeUserId, session!.user.businessId!);
   if (!dn) throw new NotFoundError("Delivery Note", id);
   return dn;
 }
@@ -87,10 +88,10 @@ export async function create_(input: {
     trackingNumber: input.trackingNumber,
     notes: input.notes,
     createdById: session!.user.userId,
-    items: input.items,
+    businessId: session!.user.businessId!,items: input.items,
   });
 
-  await updateDeliveredQuantities(input.salesOrderId);
+  await updateDeliveredQuantities(input.salesOrderId, session!.user.businessId!);
   await checkAndAutoTransitionSO(input.salesOrderId);
 
   await audit({
@@ -104,9 +105,9 @@ export async function create_(input: {
   return dn;
 }
 
-async function updateDeliveredQuantities(salesOrderId: string) {
+async function updateDeliveredQuantities(salesOrderId: string, businessId: string) {
   const allDNs = await prisma.deliveryNote.findMany({
-    where: { salesOrderId, deletedAt: null, status: { not: "CANCELLED" } },
+    where: { businessId, salesOrderId, deletedAt: null, status: { not: "CANCELLED" } },
     include: { items: { where: { deletedAt: null } } },
   });
 
@@ -157,7 +158,7 @@ export async function transition(id: string, to: string) {
   const session = await auth();
   requirePermission(session, "delivery-notes:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Delivery Note", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -180,6 +181,18 @@ export async function transition(id: string, to: string) {
     newState: { status: to },
   });
 
+  if (to === "DELIVERED") {
+    await notifyBusinessStakeholders({
+      actorId: session!.user.userId,
+      type: "delivery_completed",
+      title: "Delivery Completed",
+      message: `Delivery ${dn.documentNo} was completed`,
+      entityType: "DeliveryNote",
+      entityId: id,
+      link: `/delivery-notes/${id}`,
+    });
+  }
+
   return dn;
 }
 
@@ -187,12 +200,12 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "delivery-notes:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Delivery Note", id);
 
   await softDelete(id);
 
-  await updateDeliveredQuantities(existing.salesOrderId);
+  await updateDeliveredQuantities(existing.salesOrderId, session!.user.businessId!);
 
   await audit({
     entityType: "DeliveryNote",
@@ -207,13 +220,13 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "delivery-notes:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Delivery Note", id);
   if (!existing.deletedAt) throw new ConflictError("Delivery Note is not deleted");
 
   const dn = await restore(id);
 
-  await updateDeliveredQuantities(existing.salesOrderId);
+  await updateDeliveredQuantities(existing.salesOrderId, session!.user.businessId!);
 
   await audit({
     entityType: "DeliveryNote",

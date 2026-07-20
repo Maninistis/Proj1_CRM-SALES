@@ -14,6 +14,7 @@ const quoteInclude = {
 } satisfies Prisma.QuotationInclude;
 
 export async function findMany(params: {
+  businessId: string;
   page: number;
   pageSize: number;
   search?: string;
@@ -22,6 +23,7 @@ export async function findMany(params: {
   scopeUserId?: string;
 }) {
   const where: Prisma.QuotationWhereInput = {
+    businessId: params.businessId,
     ...(params.scopeUserId && { createdById: params.scopeUserId }),
     ...(params.deleted
       ? { deletedAt: { not: null } }
@@ -52,10 +54,11 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string, scopeUserId?: string) {
+export async function findById(id: string, scopeUserId?: string, businessId?: string) {
   return prisma.quotation.findFirst({
     where: {
       id,
+      ...(businessId && { businessId }),
       deletedAt: null,
       ...(scopeUserId && { createdById: scopeUserId }),
     },
@@ -63,7 +66,7 @@ export async function findById(id: string, scopeUserId?: string) {
   });
 }
 
-export async function findByIdIncludingDeleted(id: string) {
+export async function findByIdIncludingDeleted(id: string, businessId?: string) {
   return prisma.quotation.findUnique({
     where: { id },
     include: quoteInclude,
@@ -71,6 +74,7 @@ export async function findByIdIncludingDeleted(id: string) {
 }
 
 export async function create(data: {
+  businessId: string;
   documentNo: string;
   opportunityId: string;
   subject: string;
@@ -93,6 +97,7 @@ export async function create(data: {
 }) {
   return prisma.quotation.create({
     data: {
+      businessId: data.businessId,
       documentNo: data.documentNo,
       opportunityId: data.opportunityId,
       subject: data.subject,

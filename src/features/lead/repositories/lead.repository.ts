@@ -8,6 +8,7 @@ const leadInclude = {
 } satisfies Prisma.LeadInclude;
 
 export async function findMany(params: {
+  businessId: string;
   page: number;
   pageSize: number;
   search?: string;
@@ -17,6 +18,7 @@ export async function findMany(params: {
   scopeUserId?: string;
 }) {
   const where: Prisma.LeadWhereInput = {
+    businessId: params.businessId,
     ...(params.deleted
       ? { deletedAt: { not: null } }
       : { deletedAt: null }),
@@ -53,10 +55,11 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string, scopeUserId?: string) {
+export async function findById(id: string, scopeUserId?: string, businessId?: string) {
   return prisma.lead.findFirst({
     where: {
       id,
+      ...(businessId && { businessId }),
       deletedAt: null,
       ...(scopeUserId && {
         OR: [
@@ -69,7 +72,7 @@ export async function findById(id: string, scopeUserId?: string) {
   });
 }
 
-export async function findByIdIncludingDeleted(id: string) {
+export async function findByIdIncludingDeleted(id: string, businessId?: string) {
   return prisma.lead.findUnique({
     where: { id },
     include: leadInclude,
@@ -77,6 +80,7 @@ export async function findByIdIncludingDeleted(id: string) {
 }
 
 export async function create(data: {
+  businessId: string;
   documentNo: string;
   firstName: string;
   lastName: string;
@@ -91,6 +95,7 @@ export async function create(data: {
 }) {
   return prisma.lead.create({
     data: {
+      businessId: data.businessId,
       documentNo: data.documentNo,
       firstName: data.firstName,
       lastName: data.lastName,

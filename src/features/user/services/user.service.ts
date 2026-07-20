@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notify";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NotFoundError, ConflictError, ForbiddenError } from "@/lib/errors";
@@ -97,6 +98,27 @@ export async function create_(input: {
     userId: session!.user.userId,
     newState: { name: user.name, email: user.email, role: user.role.name },
   });
+
+  const admins = await prisma.user.findMany({
+    where: {
+      id: { not: session!.user.userId },
+      status: "ACTIVE",
+      role: { name: "Admin" },
+    },
+    select: { id: true },
+  });
+  await notifyUsers(
+    admins.map((a) => a.id),
+    {
+      actorId: session!.user.userId,
+      type: "user_created",
+      title: "New User",
+      message: `${user.name} (${user.email}) was created as ${user.role.name}`,
+      entityType: "User",
+      entityId: user.id,
+      link: `/users/${user.id}`,
+    }
+  );
 
   return user;
 }

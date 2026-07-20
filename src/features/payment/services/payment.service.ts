@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -25,14 +26,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "payments:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "payments:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const payment = await findById(id, scopeUserId);
+  const payment = await findById(id, scopeUserId, session!.user.businessId!);
   if (!payment) throw new NotFoundError("Payment", id);
   return payment;
 }
@@ -89,7 +90,7 @@ export async function create_(input: {
     proofImageUrl: input.proofImageUrl || null,
     notes: input.notes,
     receivedById: session!.user.userId,
-  });
+  businessId: session!.user.businessId!,});
 
   await recalculateInvoiceBalance(invoice.id);
 
@@ -105,6 +106,16 @@ export async function create_(input: {
       invoice: invoice.documentNo,
       customer: invoice.customerName,
     },
+  });
+
+  await notifyBusinessStakeholders({
+    actorId: session!.user.userId,
+    type: "payment_received",
+    title: "Payment Received",
+    message: `₱${input.amount.toLocaleString()} received for ${invoice.documentNo} (${invoice.customerName})`,
+    entityType: "Payment",
+    entityId: payment.id,
+    link: `/payments/${payment.id}`,
   });
 
   return payment;
@@ -164,7 +175,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "payments:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Payment", id);
 
   const invoiceId = existing.salesInvoiceId;
@@ -184,7 +195,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "payments:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Payment", id);
   if (!existing.deletedAt) throw new ConflictError("Payment is not deleted");
 

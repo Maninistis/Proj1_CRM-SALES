@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -20,8 +21,9 @@ import {
 } from "../repositories/quotation.repository";
 
 async function getTaxRate(): Promise<number> {
+  const session = await auth();
   const setting = await prisma.setting.findUnique({
-    where: { key: "tax_rate" },
+    where: { key_businessId: { key: "tax_rate", businessId: session!.user.businessId ?? "" } },
   });
   return setting ? Number(setting.value) : 0;
 }
@@ -36,14 +38,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "quotations:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "quotations:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const quote = await findById(id, scopeUserId);
+  const quote = await findById(id, scopeUserId, session!.user.businessId!);
   if (!quote) throw new NotFoundError("Quotation", id);
   return quote;
 }
@@ -101,7 +103,7 @@ export async function create_(input: {
     grandTotal: totals.grandTotal,
     notes: input.notes,
     createdById: session!.user.userId,
-    items: input.items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: input.items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -145,7 +147,7 @@ export async function update_(
   const session = await auth();
   requirePermission(session, "quotations:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);
 
   if (existing.status !== "DRAFT" && existing.status !== "READY") {
@@ -202,14 +204,14 @@ export async function update_(
     },
   });
 
-  return await findById(id);
+  return await findById(id, undefined, session!.user.businessId!);
 }
 
 export async function transition(id: string, to: string) {
   const session = await auth();
   requirePermission(session, "quotations:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -237,6 +239,28 @@ export async function transition(id: string, to: string) {
     newState: { status: to },
   });
 
+  if (to === "ACCEPTED") {
+    await notifyBusinessStakeholders({
+      actorId: session!.user.userId,
+      type: "quotation_accepted",
+      title: "Quotation Accepted",
+      message: `${quote.documentNo} (${existing.subject}) was accepted`,
+      entityType: "Quotation",
+      entityId: id,
+      link: `/quotations/${id}`,
+    });
+  } else if (to === "REJECTED") {
+    await notifyBusinessStakeholders({
+      actorId: session!.user.userId,
+      type: "quotation_rejected",
+      title: "Quotation Rejected",
+      message: `${quote.documentNo} (${existing.subject}) was rejected`,
+      entityType: "Quotation",
+      entityId: id,
+      link: `/quotations/${id}`,
+    });
+  }
+
   return quote;
 }
 
@@ -244,7 +268,7 @@ export async function duplicate(id: string) {
   const session = await auth();
   requirePermission(session, "quotations:create");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);
 
   const items = existing.items.map((i) => ({
@@ -277,7 +301,7 @@ export async function duplicate(id: string) {
     grandTotal: totals.grandTotal,
     notes: existing.notes ?? undefined,
     createdById: session!.user.userId,
-    items: items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -306,7 +330,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "quotations:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);
 
   await softDelete(id);
@@ -328,7 +352,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "quotations:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);
   if (!existing.deletedAt) {
     throw new ConflictError("Quotation is not deleted");

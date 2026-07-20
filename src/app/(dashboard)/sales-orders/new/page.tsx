@@ -19,11 +19,11 @@ export default async function NewSOPage({
 
   const [customers, taxSetting, products, quotation] = await Promise.all([
     prisma.customer.findMany({
-      where: { deletedAt: null, status: "ACTIVE", ...(scopeUserId ? { createdById: scopeUserId } : {}) },
+      where: { businessId: session!.user.businessId ?? "", deletedAt: null, status: "ACTIVE", ...(scopeUserId ? { createdById: scopeUserId } : {}) },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.setting.findUnique({ where: { key: "tax_rate" } }),
+    prisma.setting.findUnique({ where: { key_businessId: { key: "tax_rate", businessId: session!.user.businessId ?? "" } } }),
     prisma.product.findMany({
       where: { isActive: true },
       select: { id: true, name: true, defaultPrice: true, category: true },

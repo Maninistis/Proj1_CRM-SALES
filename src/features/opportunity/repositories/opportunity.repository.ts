@@ -11,6 +11,7 @@ const oppInclude = {
 } satisfies Prisma.OpportunityInclude;
 
 export async function findMany(params: {
+  businessId: string;
   page: number;
   pageSize: number;
   search?: string;
@@ -20,6 +21,7 @@ export async function findMany(params: {
   scopeUserId?: string;
 }) {
   const where: Prisma.OpportunityWhereInput = {
+    businessId: params.businessId,
     ...(params.scopeUserId && {
       OR: [{ assignedToId: params.scopeUserId }, { createdById: params.scopeUserId }],
     }),
@@ -52,10 +54,11 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string, scopeUserId?: string) {
+export async function findById(id: string, scopeUserId?: string, businessId?: string) {
   return prisma.opportunity.findFirst({
     where: {
       id,
+      ...(businessId && { businessId }),
       deletedAt: null,
       ...(scopeUserId && {
         OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }],
@@ -65,7 +68,7 @@ export async function findById(id: string, scopeUserId?: string) {
   });
 }
 
-export async function findByIdIncludingDeleted(id: string) {
+export async function findByIdIncludingDeleted(id: string, businessId?: string) {
   return prisma.opportunity.findUnique({
     where: { id },
     include: oppInclude,
@@ -79,6 +82,7 @@ export async function findByLeadId(leadId: string) {
 }
 
 export async function create(data: {
+  businessId: string;
   documentNo: string;
   leadId: string;
   title: string;
@@ -90,6 +94,7 @@ export async function create(data: {
 }) {
   return prisma.opportunity.create({
     data: {
+      businessId: data.businessId,
       documentNo: data.documentNo,
       leadId: data.leadId,
       title: data.title,

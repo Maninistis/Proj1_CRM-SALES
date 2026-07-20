@@ -19,11 +19,11 @@ export default async function NewQuotationPage({
 
   const [opportunities, taxSetting, products, opportunity] = await Promise.all([
     prisma.opportunity.findMany({
-      where: { deletedAt: null, status: "CLOSED_WON", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) },
+      where: { businessId: session!.user.businessId ?? "", deletedAt: null, status: "CLOSED_WON", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) },
       select: { id: true, title: true, documentNo: true },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.setting.findUnique({ where: { key: "tax_rate" } }),
+    prisma.setting.findUnique({ where: { key_businessId: { key: "tax_rate", businessId: session!.user.businessId ?? "" } } }),
     prisma.product.findMany({
       where: { isActive: true },
       select: { id: true, name: true, defaultPrice: true, category: true },

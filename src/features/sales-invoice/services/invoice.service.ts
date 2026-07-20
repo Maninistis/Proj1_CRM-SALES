@@ -29,14 +29,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "sales-invoices:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "sales-invoices:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const inv = await findById(id, scopeUserId);
+  const inv = await findById(id, scopeUserId, session!.user.businessId!);
   if (!inv) throw new NotFoundError("Invoice", id);
   return inv;
 }
@@ -105,7 +105,7 @@ export async function create_(input: {
     grandTotal: totals.grandTotal,
     notes: input.notes,
     createdById: session!.user.userId,
-    items: input.items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: input.items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -195,7 +195,7 @@ export async function generateFromSalesOrder(salesOrderId: string) {
     grandTotal: totals.grandTotal,
     notes: so.notes ?? undefined,
     createdById: session!.user.userId,
-    items: items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -230,7 +230,7 @@ export async function transition(id: string, to: string) {
   const session = await auth();
   requirePermission(session, "sales-invoices:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Invoice", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -255,7 +255,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "sales-invoices:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Invoice", id);
 
   await softDelete(id);
@@ -273,7 +273,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "sales-invoices:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Invoice", id);
   if (!existing.deletedAt) throw new ConflictError("Invoice is not deleted");
 

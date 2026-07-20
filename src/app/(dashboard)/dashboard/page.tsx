@@ -26,6 +26,7 @@ export default async function DashboardPage({
     getOnboardingStatus(),
   ]);
   const session = await auth();
+  const isGlobalView = session?.user?.businessId === "all";
 
   if (!data) return <div className="p-6"><p className="text-sm text-[#787F87]">Loading...</p></div>;
 
@@ -44,9 +45,15 @@ export default async function DashboardPage({
       <div className="flex flex-wrap items-center justify-between gap-y-3">
         <div>
           <h1 className="font-heading text-xl font-bold text-[#103447]">
-            Welcome back, {session?.user?.name?.split(" ")[0] ?? "User"}
+            {isGlobalView
+              ? "All Businesses Overview"
+              : `Welcome back, ${session?.user?.name?.split(" ")[0] ?? "User"}`}
           </h1>
-          <p className="text-sm text-[#787F87]">Here's what's happening with your business</p>
+          <p className="text-sm text-[#787F87]">
+            {isGlobalView
+              ? "Aggregated analytics across every business you manage"
+              : "Here's what's happening with your business"}
+          </p>
         </div>
         <Suspense fallback={null}>
           <DateFilter />
@@ -95,7 +102,9 @@ export default async function DashboardPage({
       {/* Top Customers + Quick Actions */}
       <div className="grid gap-4 lg:grid-cols-2">
         <TopCustomers customers={topCustomers ?? null} />
-        <QuickActions permissions={permissions} onboarding={onboarding} />
+        {!isGlobalView && (
+          <QuickActions permissions={permissions} onboarding={onboarding} />
+        )}
       </div>
     </div>
   );

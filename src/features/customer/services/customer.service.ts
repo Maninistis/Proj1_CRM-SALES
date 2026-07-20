@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -28,14 +29,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "customers:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "customers:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const customer = await findById(id, scopeUserId);
+  const customer = await findById(id, scopeUserId, session!.user.businessId!);
   if (!customer) throw new NotFoundError("Customer", id);
   return customer;
 }
@@ -84,7 +85,7 @@ export async function create_(input: {
     paymentTerms: input.paymentTerms,
     leadId: input.leadId,
     createdById: session!.user.userId,
-    billingAddress: input.billingLine1
+    businessId: session!.user.businessId!,billingAddress: input.billingLine1
       ? {
           line1: input.billingLine1,
           line2: input.billingLine2,
@@ -102,6 +103,16 @@ export async function create_(input: {
     action: "CREATE",
     userId: session!.user.userId,
     newState: { documentNo: customer.documentNo, name: customer.name, status: customer.status },
+  });
+
+  await notifyBusinessStakeholders({
+    actorId: session!.user.userId,
+    type: "customer_created",
+    title: "New Customer",
+    message: `${customer.name} (${customer.documentNo}) was added`,
+    entityType: "Customer",
+    entityId: customer.id,
+    link: `/customers/${customer.id}`,
   });
 
   return customer;
@@ -138,7 +149,7 @@ export async function convertFromOpportunity(opportunityId: string) {
     leadId: opp.leadId,
     paymentTerms: 30,
     createdById: session!.user.userId,
-  });
+  businessId: session!.user.businessId!,});
 
   await audit({
     entityType: "Customer",
@@ -151,6 +162,16 @@ export async function convertFromOpportunity(opportunityId: string) {
       convertedFromOpportunity: opp.documentNo,
     },
     metadata: { action: "opportunity_conversion", opportunityId },
+  });
+
+  await notifyBusinessStakeholders({
+    actorId: session!.user.userId,
+    type: "customer_created",
+    title: "New Customer",
+    message: `${customer.name} (${customer.documentNo}) was created from ${opp.documentNo}`,
+    entityType: "Customer",
+    entityId: customer.id,
+    link: `/customers/${customer.id}`,
   });
 
   return customer;
@@ -171,7 +192,7 @@ export async function update_(
   const session = await auth();
   requirePermission(session, "customers:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Customer", id);
 
   if (input.email && input.email !== existing.email) {
@@ -197,7 +218,7 @@ export async function transition(id: string, to: string) {
   const session = await auth();
   requirePermission(session, "customers:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Customer", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -222,7 +243,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "customers:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Customer", id);
 
   await softDelete(id);
@@ -240,7 +261,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "customers:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Customer", id);
   if (!existing.deletedAt) throw new ConflictError("Customer is not deleted");
 

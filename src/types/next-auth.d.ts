@@ -11,6 +11,7 @@ declare module "next-auth" {
       userId: string;
       roleId: string;
       permissions: string[];
+      businessId: string | null;
     } & DefaultSession["user"];
   }
 

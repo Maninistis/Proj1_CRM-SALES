@@ -9,6 +9,7 @@ const paymentInclude = {
 } satisfies Prisma.PaymentInclude;
 
 export async function findMany(params: {
+  businessId: string;
   page: number;
   pageSize: number;
   search?: string;
@@ -18,6 +19,7 @@ export async function findMany(params: {
   scopeUserId?: string;
 }) {
   const where: Prisma.PaymentWhereInput = {
+    businessId: params.businessId,
     ...(params.scopeUserId && { receivedById: params.scopeUserId }),
     ...(params.deleted ? { deletedAt: { not: null } } : { deletedAt: null }),
     ...(params.status && { status: params.status }),
@@ -45,10 +47,11 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string, scopeUserId?: string) {
+export async function findById(id: string, scopeUserId?: string, businessId?: string) {
   return prisma.payment.findFirst({
     where: {
       id,
+      ...(businessId && { businessId }),
       deletedAt: null,
       ...(scopeUserId && { receivedById: scopeUserId }),
     },
@@ -56,7 +59,7 @@ export async function findById(id: string, scopeUserId?: string) {
   });
 }
 
-export async function findByIdIncludingDeleted(id: string) {
+export async function findByIdIncludingDeleted(id: string, businessId?: string) {
   return prisma.payment.findUnique({
     where: { id },
     include: paymentInclude,
@@ -64,6 +67,7 @@ export async function findByIdIncludingDeleted(id: string) {
 }
 
 export async function create(data: {
+  businessId: string;
   documentNo: string;
   salesInvoiceId: string;
   customerId: string;
@@ -78,6 +82,7 @@ export async function create(data: {
 }) {
   return prisma.payment.create({
     data: {
+      businessId: data.businessId,
       documentNo: data.documentNo,
       salesInvoiceId: data.salesInvoiceId,
       customerId: data.customerId,

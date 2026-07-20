@@ -10,6 +10,7 @@ const customerInclude = {
 } satisfies Prisma.CustomerInclude;
 
 export async function findMany(params: {
+  businessId: string;
   page: number;
   pageSize: number;
   search?: string;
@@ -18,6 +19,7 @@ export async function findMany(params: {
   scopeUserId?: string;
 }) {
   const where: Prisma.CustomerWhereInput = {
+    businessId: params.businessId,
     ...(params.scopeUserId && { createdById: params.scopeUserId }),
     ...(params.deleted ? { deletedAt: { not: null } } : { deletedAt: null }),
     ...(params.status && { status: params.status }),
@@ -45,10 +47,11 @@ export async function findMany(params: {
   return { data, total };
 }
 
-export async function findById(id: string, scopeUserId?: string) {
+export async function findById(id: string, scopeUserId?: string, businessId?: string) {
   return prisma.customer.findFirst({
     where: {
       id,
+      ...(businessId && { businessId }),
       deletedAt: null,
       ...(scopeUserId && { createdById: scopeUserId }),
     },
@@ -56,7 +59,7 @@ export async function findById(id: string, scopeUserId?: string) {
   });
 }
 
-export async function findByIdIncludingDeleted(id: string) {
+export async function findByIdIncludingDeleted(id: string, businessId?: string) {
   return prisma.customer.findUnique({
     where: { id },
     include: customerInclude,
@@ -70,6 +73,7 @@ export async function findByEmail(email: string) {
 }
 
 export async function create(data: {
+  businessId: string;
   documentNo: string;
   name: string;
   email?: string;
@@ -91,6 +95,7 @@ export async function create(data: {
 }) {
   return prisma.customer.create({
     data: {
+      businessId: data.businessId,
       documentNo: data.documentNo,
       name: data.name,
       email: data.email || null,

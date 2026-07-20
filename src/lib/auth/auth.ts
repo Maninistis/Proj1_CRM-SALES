@@ -1,21 +1,13 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import { verifyCredentials, extractPermissions } from "@/features/user/services/auth.service";
 import { loginSchema } from "@/features/user/schemas/login-schema";
 
-/**
- * Auth.js v5 instance — used in Server Components, Server Actions,
- * and Route Handlers. Runs in the Node.js runtime (not edge).
- *
- * The credentials provider's `authorize` function queries the database
- * via the service layer and returns the user with permissions.
- * The `jwt` callback (in auth.config.ts) copies these to the token.
- */
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuthInstance = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -25,11 +17,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        // Validate input with Zod
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) {
-          return null;
-        }
+        if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
 
@@ -37,7 +26,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const user = await verifyCredentials(email, password);
           const permissions = extractPermissions(user);
 
-          // Return user object — the jwt callback will copy these to the token
           return {
             id: user.id,
             email: user.email,
@@ -46,10 +34,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             permissions,
           };
         } catch {
-          // Invalid credentials — return null to trigger the error UI
           return null;
         }
       },
     }),
   ],
 });
+
+export const { handlers, signIn, signOut } = nextAuthInstance;
+
+export async function auth() {
+  const session = await nextAuthInstance.auth();
+  if (!session?.user) return session;
+
+  const cookieStore = await cookies();
+  const businessId = cookieStore.get("businessId")?.value ?? null;
+
+  return {
+    ...session,
+    user: { ...session.user, businessId },
+  };
+}

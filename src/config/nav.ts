@@ -138,17 +138,10 @@ export const systemNavItems: SystemNavItem[] = [
     description: "Review system activity",
   },
   {
-    label: "Settings",
-    href: "/settings",
+    label: "Edit Company Details",
+    href: "/settings/company",
     icon: Settings,
     permission: "settings:read",
-    description: "Configure application",
-  },
-  {
-    label: "Document Settings",
-    href: "/settings/documents",
-    icon: FileText,
-    permission: "settings:read",
-    description: "Branding for invoices, quotations & documents",
+    description: "Company info, branding, documents & preferences",
   },
 ];

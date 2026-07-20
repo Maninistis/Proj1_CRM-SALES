@@ -13,7 +13,13 @@ import { TopbarNotifications } from "@/components/layout/topbar-notifications";
 import { TopbarSystemMenu } from "@/components/layout/topbar-system-menu";
 import { GlobalSearch } from "@/components/layout/global-search";
 
-export function Topbar({ permissions }: { permissions: string[] }) {
+export function Topbar({
+  permissions,
+  isGlobalView = false,
+}: {
+  permissions: string[];
+  isGlobalView?: boolean;
+}) {
   const pathname = usePathname();
   const crumbs = getBreadcrumbs(pathname);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -73,7 +79,7 @@ export function Topbar({ permissions }: { permissions: string[] }) {
 
       <div className="ml-auto flex items-center gap-3 md:ml-0">
         <TopbarNotifications />
-        <TopbarSystemMenu permissions={permissions} />
+        {!isGlobalView && <TopbarSystemMenu permissions={permissions} />}
       </div>
     </header>
   );

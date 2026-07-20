@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { productCreateSchema } from "@/features/product/schemas/product-schema";
 import { productUpdateSchema } from "@/features/product/schemas/product-schema";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth/auth";
 import { AppError } from "@/lib/errors";
 
 export type ProductActionState = {
@@ -28,7 +29,8 @@ export async function createProductAction(
   }
 
   try {
-    await prisma.product.create({ data: parsed.data });
+    const session = await auth();
+    await prisma.product.create({ data: { ...parsed.data, businessId: session!.user.businessId ?? "" } });
   } catch (e) {
     if (e instanceof AppError) return { success: false, error: e.message };
     return { success: false, error: "Failed to create product" };

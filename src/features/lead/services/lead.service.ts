@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -29,14 +30,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "leads:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "leads:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const lead = await findById(id, scopeUserId);
+  const lead = await findById(id, scopeUserId, session!.user.businessId!);
   if (!lead) throw new NotFoundError("Lead", id);
   return lead;
 }
@@ -68,7 +69,7 @@ export async function create_(input: {
     source: input.source,
     assignedToId: input.assignedToId,
     createdById: session!.user.userId,
-    notes: input.notes,
+    businessId: session!.user.businessId!,notes: input.notes,
   });
 
   await audit({
@@ -83,6 +84,18 @@ export async function create_(input: {
       status: lead.status,
     },
   });
+
+  if (input.assignedToId && input.assignedToId !== session!.user.userId) {
+    await notifyUsers([input.assignedToId], {
+      actorId: session!.user.userId,
+      type: "lead_assigned",
+      title: "New Lead Assigned",
+      message: `${lead.firstName} ${lead.lastName} (${lead.documentNo}) was assigned to you`,
+      entityType: "Lead",
+      entityId: lead.id,
+      link: `/leads/${lead.id}`,
+    });
+  }
 
   return lead;
 }
@@ -104,7 +117,7 @@ export async function update_(
   const session = await auth();
   requirePermission(session, "leads:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Lead", id);
 
   const lead = await update(id, input);
@@ -130,6 +143,22 @@ export async function update_(
     },
   });
 
+  if (
+    input.assignedToId &&
+    input.assignedToId !== existing.assignedToId &&
+    input.assignedToId !== session!.user.userId
+  ) {
+    await notifyUsers([input.assignedToId], {
+      actorId: session!.user.userId,
+      type: "lead_assigned",
+      title: "Lead Assigned to You",
+      message: `${lead.firstName} ${lead.lastName} (${lead.documentNo}) was assigned to you`,
+      entityType: "Lead",
+      entityId: lead.id,
+      link: `/leads/${lead.id}`,
+    });
+  }
+
   return lead;
 }
 
@@ -137,7 +166,7 @@ export async function transition(id: string, to: string, reason?: string) {
   const session = await auth();
   requirePermission(session, "leads:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Lead", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -165,7 +194,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "leads:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Lead", id);
 
   await softDelete(id);
@@ -187,7 +216,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "leads:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Lead", id);
   if (!existing.deletedAt) {
     throw new ConflictError("Lead is not deleted");

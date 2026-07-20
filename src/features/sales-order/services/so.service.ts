@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
+import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
@@ -28,14 +29,14 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "sales-orders:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  return findMany({ ...params, scopeUserId });
+  return findMany({ ...params, scopeUserId, businessId: session!.user.businessId! });
 }
 
 export async function getById(id: string) {
   const session = await auth();
   requirePermission(session, "sales-orders:read");
   const scopeUserId = getScopeUserId(session!.user.permissions, session!.user.userId);
-  const so = await findById(id, scopeUserId);
+  const so = await findById(id, scopeUserId, session!.user.businessId!);
   if (!so) throw new NotFoundError("Sales Order", id);
   return so;
 }
@@ -100,7 +101,7 @@ export async function create_(input: {
     grandTotal: totals.grandTotal,
     notes: input.notes,
     createdById: session!.user.userId,
-    items: input.items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: input.items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -120,6 +121,16 @@ export async function create_(input: {
       grandTotal: totals.grandTotal,
       fromQuotation: input.quotationId ? "yes" : "no",
     },
+  });
+
+  await notifyBusinessStakeholders({
+    actorId: session!.user.userId,
+    type: "sales_order_created",
+    title: "New Sales Order",
+    message: `${so.documentNo} (${customer.name}) was created`,
+    entityType: "SalesOrder",
+    entityId: so.id,
+    link: `/sales-orders/${so.id}`,
   });
 
   return so;
@@ -176,7 +187,7 @@ export async function convertFromQuotation(
     grandTotal: totals.grandTotal,
     notes: quote.notes ?? undefined,
     createdById: session!.user.userId,
-    items: items.map((item, i) => ({
+    businessId: session!.user.businessId!,items: items.map((item, i) => ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -199,6 +210,16 @@ export async function convertFromQuotation(
     metadata: { action: "quotation_conversion", quotationId },
   });
 
+  await notifyBusinessStakeholders({
+    actorId: session!.user.userId,
+    type: "sales_order_created",
+    title: "New Sales Order",
+    message: `${so.documentNo} (${customer.name}) was created from ${quote.documentNo}`,
+    entityType: "SalesOrder",
+    entityId: so.id,
+    link: `/sales-orders/${so.id}`,
+  });
+
   return so;
 }
 
@@ -206,7 +227,7 @@ export async function transition(id: string, to: string) {
   const session = await auth();
   requirePermission(session, "sales-orders:update");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Sales Order", id);
 
   if (!isValidTransition(existing.status, to)) {
@@ -237,7 +258,7 @@ export async function softDelete_(id: string) {
   const session = await auth();
   requirePermission(session, "sales-orders:delete");
 
-  const existing = await findById(id);
+  const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Sales Order", id);
 
   await softDelete(id);
@@ -255,7 +276,7 @@ export async function restore_(id: string) {
   const session = await auth();
   requirePermission(session, "sales-orders:delete");
 
-  const existing = await findByIdIncludingDeleted(id);
+  const existing = await findByIdIncludingDeleted(id, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Sales Order", id);
   if (!existing.deletedAt) throw new ConflictError("Sales Order is not deleted");
 
