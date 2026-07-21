@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { productCreateSchema, type ProductCreateInput } from "@/features/product/schemas/product-schema";
 import { createProductAction, type ProductActionState } from "@/features/product/actions/product-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,15 @@ export function ProductForm() {
       <CardHeader><CardTitle>New Product / Service</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -80,6 +89,7 @@ export function ProductForm() {
               )}
             />
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <Button type="submit">Create Product</Button>
           </form>
         </Form>

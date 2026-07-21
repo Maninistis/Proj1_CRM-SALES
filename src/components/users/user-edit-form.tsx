@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userUpdateSchema, type UserUpdateInput } from "@/features/user/schemas/user-update";
 import { updateUserAction, type UserActionState } from "@/features/user/actions/user-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { buildOptionItems } from "@/lib/select-helpers";
@@ -53,7 +54,15 @@ export function UserEditForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <FormField
               control={form.control}
               name="name"
@@ -148,6 +157,7 @@ export function UserEditForm({
             {state.error && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>

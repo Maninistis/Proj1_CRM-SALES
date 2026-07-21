@@ -7,6 +7,7 @@ import { quotationCreateSchema, type QuotationCreateInput } from "@/features/quo
 import { createQuotationAction, type QuoteActionState } from "@/features/quotation/actions/quotation-actions";
 import { computeAllTotals, calcLineTotal } from "@/features/quotation/calculations";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,15 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog, prefill 
       <CardHeader><CardTitle>New Quotation</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-6">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-6"
+>
             {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Quotation" />}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -265,6 +274,7 @@ export function QuotationForm({ opportunities, defaultTaxRate, catalog, prefill 
 
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Create Quotation</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

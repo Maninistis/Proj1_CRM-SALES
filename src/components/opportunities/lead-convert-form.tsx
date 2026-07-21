@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/forms/money-input";
 import { Button } from "@/components/ui/button";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Label } from "@/components/ui/label";
 
 type LeadConvertFormProps = {
@@ -66,6 +67,7 @@ export function LeadConvertForm({ leadId, leadName }: LeadConvertFormProps) {
           {state.error && (
             <p className="text-sm text-destructive">{state.error}</p>
           )}
+          <FormValidationSummary />
           <Button type="submit">Convert Lead</Button>
         </form>
       </CardContent>

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { roleUpdateSchema, type RoleUpdateInput } from "@/features/role/schemas/role-update";
 import { updateRoleAction, type RoleActionState } from "@/features/role/actions/role-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,15 @@ export function RoleEditForm({ role, permissions }: RoleEditFormProps) {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <FormField
               control={form.control}
               name="name"
@@ -127,6 +136,7 @@ export function RoleEditForm({ role, permissions }: RoleEditFormProps) {
             {state.error && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>

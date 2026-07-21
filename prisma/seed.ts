@@ -245,13 +245,13 @@ async function main() {
     const sub = Math.round(lt.reduce((a,b)=>a+b,0)*100)/100;
     const tax = Math.round(sub*0.12*100)/100;
     const gt = Math.round((sub+tax)*100)/100;
-    const status = i<12?"COMPLETED":i<17?"DELIVERED":i<19?"FULFILLING":"CONFIRMED";
+    const status = i<8?"COMPLETED":i<13?"DELIVERED":i<17?"FULLY_PAID":i<19?"PARTIALLY_PAID":"AWAITING_PAYMENT";
     const so = await prisma.salesOrder.create({ data: { businessId: bizId,
       documentNo: await genDocNo("SO"), customerId: cust.id, status,
       orderDate: created, expectedDeliveryDate: new Date(created.getTime()+14*86400000),
       subtotal: sub, discountTotal: 0, taxRate: 0.12, taxTotal: tax, grandTotal: gt,
       createdById: cust.repId, createdAt: created, updatedAt: created,
-      items: { create: items.map((it,k)=>({description:it.d,quantity:it.q,unitPrice:it.p,discountPercent:it.dp,lineTotal:lt[k],deliveredQuantity:["COMPLETED","DELIVERED"].includes(status)?it.q:status==="FULFILLING"?Math.floor(it.q*0.5):0})) },
+      items: { create: items.map((it,k)=>({description:it.d,quantity:it.q,unitPrice:it.p,discountPercent:it.dp,lineTotal:lt[k],deliveredQuantity:["COMPLETED","DELIVERED"].includes(status)?it.q:0})) },
     }});
     sos.push({id:so.id,custId:cust.id,custName:cust.name,grandTotal:gt,taxRate:0.12,status,terms:cust.terms,repId:cust.repId,items});
   }
@@ -259,16 +259,16 @@ async function main() {
 
   let dnCount = 0;
   for (let i = 0; i < sos.length; i++) {
-    const so = sos[i]; if (!["COMPLETED","DELIVERED","FULFILLING"].includes(so.status)) continue;
+    const so = sos[i]; if (!["COMPLETED","DELIVERED"].includes(so.status)) continue;
     const created = daysAgo(65-i*3);
     const soItems = await prisma.salesOrderItem.findMany({where:{salesOrderId:so.id,deletedAt:null}});
     const delItems = soItems.filter(it=>Number(it.quantity)-Number(it.deliveredQuantity)>0);
     if (!delItems.length) continue;
     const carriers = ["LBC Express","JRS Express","2GO Logistics","Air21"];
-    const status = so.status==="COMPLETED"?"ACKNOWLEDGED":so.status==="DELIVERED"?"DELIVERED":"DISPATCHED";
+    const status = so.status==="COMPLETED"?"ACKNOWLEDGED":"DELIVERED";
     await prisma.deliveryNote.create({ data: { businessId: bizId,
       documentNo: await genDocNo("DN"), salesOrderId: so.id, status,
-      deliveryDate: status!=="DISPATCHED"?new Date(created.getTime()+2*86400000):null,
+      deliveryDate: new Date(created.getTime()+2*86400000),
       carrier: carriers[i%4], trackingNumber: `${carriers[i%4].split(" ")[0]}-${500000+i*137}`,
       createdById: adminId, createdAt: created,
       items: { create: delItems.map(it=>({salesOrderItemId:it.id,description:it.description,quantity:Number(it.deliveredQuantity)>0?Number(it.deliveredQuantity):Number(it.quantity)})) },
@@ -280,14 +280,32 @@ async function main() {
   let invCount = 0, payCount = 0;
   const monthlyRev = new Map<string,number>();
   for (let i = 0; i < sos.length; i++) {
-    const so = sos[i]; if (!["COMPLETED","DELIVERED","FULFILLING"].includes(so.status)) continue;
+    const so = sos[i]; if (so.status === "AWAITING_PAYMENT") {
+      const created = daysAgo(60-i*3);
+      const dueDate = new Date(created.getTime()+so.terms*86400000);
+      const cust = await prisma.customer.findUnique({where:{id:so.custId},include:{addresses:{where:{type:"BILLING"}}}});
+      const b = cust?.addresses[0];
+      const inv = await prisma.salesInvoice.create({ data: { businessId: bizId,
+        documentNo: await genDocNo("INV"), salesOrderId: so.id, customerId: so.custId,
+        customerName: so.custName, customerEmail: cust?.email, customerPhone: cust?.phone,
+        customerAddress: b?[b.line1,b.line2,b.city,b.state,b.postalCode,b.country].filter(Boolean).join(", "):null,
+        status: "OPEN", issueDate: created, dueDate, currency: "PHP",
+        subtotal: Math.round(so.grandTotal/1.12*100)/100, discountTotal: 0, taxRate: 0.12,
+        taxTotal: Math.round((so.grandTotal-so.grandTotal/1.12)*100)/100, grandTotal: so.grandTotal,
+        paidAmount: 0, paidAt: null, createdById: adminId, createdAt: created,
+        items: { create: so.items.map(it=>({description:it.d,quantity:it.q,unitPrice:it.p,discountPercent:it.dp,lineTotal:Math.round(it.q*it.p*(1-it.dp/100)*100)/100})) },
+      }});
+      invCount++;
+      continue;
+    }
     const created = daysAgo(60-i*3);
     const dueDate = new Date(created.getTime()+so.terms*86400000);
     let invStatus = "OPEN", paidAmt = 0, paidAt: Date|null = null;
-    if (so.status==="COMPLETED"&&i<10){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+5*86400000);}
-    else if(so.status==="COMPLETED"&&i<12){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+3*86400000);}
-    else if(i<15){invStatus="PARTIALLY_PAID";paidAmt=Math.round(so.grandTotal*0.5*100)/100;paidAt=new Date(created.getTime()+7*86400000);}
-    else if(dueDate<new Date()){invStatus="OVERDUE";}
+    if (so.status==="COMPLETED"&&i<6){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+5*86400000);}
+    else if(so.status==="COMPLETED"&&i<8){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+3*86400000);}
+    else if(so.status==="DELIVERED"){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+4*86400000);}
+    else if(so.status==="FULLY_PAID"){invStatus="PAID";paidAmt=so.grandTotal;paidAt=new Date(created.getTime()+6*86400000);}
+    else if(so.status==="PARTIALLY_PAID"){invStatus="PARTIALLY_PAID";paidAmt=Math.round(so.grandTotal*0.5*100)/100;paidAt=new Date(created.getTime()+7*86400000);}
     const cust = await prisma.customer.findUnique({where:{id:so.custId},include:{addresses:{where:{type:"BILLING"}}}});
     const b = cust?.addresses[0];
     const inv = await prisma.salesInvoice.create({ data: { businessId: bizId,
@@ -326,6 +344,7 @@ async function main() {
       payCount++;
       monthlyRev.set(mk2,(monthlyRev.get(mk2)??0)+rem);
       await prisma.salesInvoice.update({where:{id:inv.id},data:{paidAmount:so.grandTotal,status:"PAID",paidAt:pd2}});
+      await prisma.salesOrder.update({where:{id:so.id},data:{status:"FULLY_PAID"}});
     }
   }
   console.log(`Invoices: ${invCount}, Payments: ${payCount}`);

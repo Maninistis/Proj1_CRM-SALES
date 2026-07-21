@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userCreateSchema, type UserCreateInput } from "@/features/user/schemas/user-create";
 import { createUserAction, type UserActionState } from "@/features/user/actions/user-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/forms/phone-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +132,15 @@ export function UserForm({
         <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
         <CardContent>
           <Form {...form}>
-            <form action={formAction} className="space-y-6">
+            <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-6"
+>
               <input type="hidden" name="image" value={imageUrl} />
 
               {/* Profile Picture */}
@@ -173,7 +183,7 @@ export function UserForm({
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone Number *</FormLabel>
-                    <FormControl><Input placeholder="0917 123 4567" {...field} /></FormControl>
+                    <FormControl><PhoneInput placeholder="0917 123 4567" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -359,6 +369,7 @@ export function UserForm({
               {state.error && (
                 <p className="text-sm text-destructive">{state.error}</p>
               )}
+              <FormValidationSummary />
               <div className="flex gap-2">
                 <Button
                   type="submit"

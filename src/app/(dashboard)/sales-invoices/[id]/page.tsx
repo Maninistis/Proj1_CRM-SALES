@@ -9,8 +9,10 @@ import { STATUS_LABELS } from "@/features/sales-invoice/constants";
 import { InvoiceDetailActions } from "@/components/invoices/invoice-detail-actions";
 import { checkPaymentBeforeDelivery } from "@/lib/workflow/delivery-policy";
 import { ReturnToPipeline, pipelineUrl } from "@/components/pipeline/return-to-pipeline";
+import { auth } from "@/lib/auth/auth";
+import { hasPermission } from "@/lib/auth/permissions";
 import { notFound } from "next/navigation";
-import { Truck, Lock, Printer, FileDown } from "lucide-react";
+import { Truck, Printer, FileDown } from "lucide-react";
 
 export default async function InvoiceDetailPage({
   params,
@@ -22,10 +24,13 @@ export default async function InvoiceDetailPage({
   if (!inv) notFound();
 await assertOwnership(inv);
 
+  const session = await auth();
+  const canVoid = !!session && hasPermission(session.user.permissions, "sales-invoices:delete");
+
   const isDeleted = !!inv.deletedAt;
   const balance = Number(inv.grandTotal) - Number(inv.paidAmount);
 
-  const deliveryCheck = inv.salesOrder && !isDeleted && inv.status !== "VOIDED" && inv.status !== "DRAFT"
+  const deliveryCheck = inv.salesOrder && !isDeleted && inv.status !== "VOIDED"
     ? await checkPaymentBeforeDelivery(inv.salesOrder.id)
     : null;
 
@@ -60,7 +65,7 @@ await assertOwnership(inv);
         {isDeleted && <Badge variant="destructive">Deleted</Badge>}
       </div>
 
-      <InvoiceDetailActions invId={id} status={inv.status} isDeleted={isDeleted} />
+      <InvoiceDetailActions invId={id} status={inv.status} isDeleted={isDeleted} canVoid={canVoid} />
 
       {deliveryCheck && deliveryCheck.canDeliver && inv.salesOrder && (
         <Link href={`/delivery-notes/new?so=${inv.salesOrder.id}`} className={buttonVariants({ variant: "default", size: "sm" })}>

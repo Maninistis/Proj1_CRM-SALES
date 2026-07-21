@@ -14,6 +14,7 @@ import {
   Receipt,
   Wallet,
   Workflow,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,6 +45,12 @@ export const navGroups: NavGroup[] = [
         href: "/pipeline",
         icon: Workflow,
         permission: "leads:read",
+      },
+      {
+        label: "Team Overview",
+        href: "/team",
+        icon: UsersRound,
+        permission: "users:read",
       },
       {
         label: "Products & Services",

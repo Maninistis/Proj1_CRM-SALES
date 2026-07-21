@@ -7,10 +7,10 @@ type Props = React.ComponentProps<typeof Input>;
 export function PhoneInput({ onChange, ...props }: Props) {
   return (
     <Input
-      inputMode="numeric"
+      inputMode="tel"
       onChange={(e) => {
-        const digits = e.target.value.replace(/[^0-9]/g, "");
-        e.target.value = digits;
+        const filtered = e.target.value.replace(/[^0-9+ ]/g, "");
+        e.target.value = filtered;
         onChange?.(e);
       }}
       {...props}

@@ -8,6 +8,7 @@ import { createSOAction, type SOActionState } from "@/features/sales-order/actio
 import { computeAllTotals, calcLineTotal } from "@/features/quotation/calculations";
 import { ProductDescriptionInput, type CatalogItem } from "@/components/quotations/product-description-input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,15 @@ export function SOForm({ customers, defaultTaxRate, catalog, prefill }: { custom
       <CardHeader><CardTitle>New Sales Order</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-6">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-6"
+>
             {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Sales Order" />}
             {prefill?.quotationId && (
               <input type="hidden" name="quotationId" value={prefill.quotationId} />
@@ -149,6 +158,7 @@ export function SOForm({ customers, defaultTaxRate, catalog, prefill }: { custom
             )} />
 
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Create Sales Order</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

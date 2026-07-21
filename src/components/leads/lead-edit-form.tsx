@@ -8,6 +8,7 @@ import { updateLeadAction, type LeadActionState } from "@/features/lead/actions/
 import { LEAD_SOURCE_OPTIONS } from "@/features/lead/constants";
 import { buildItems, buildOptionItems } from "@/lib/select-helpers";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/forms/phone-input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,7 +65,15 @@ export function LeadEditForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -107,7 +116,7 @@ export function LeadEditForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone *</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormControl><PhoneInput {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -187,6 +196,7 @@ export function LeadEditForm({
               )}
             />
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

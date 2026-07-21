@@ -7,6 +7,7 @@ import { paymentCreateSchema, type PaymentCreateInput } from "@/features/payment
 import { createPaymentAction, type PaymentActionState } from "@/features/payment/actions/payment-actions";
 import { METHOD_OPTIONS } from "@/features/payment/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/forms/money-input";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,7 +83,15 @@ export function PaymentForm({
           <div className="flex justify-between border-t border-border pt-2"><span className="font-medium">Remaining Balance</span><span className="font-bold text-red-600">₱{remaining.toLocaleString()}</span></div>
         </div>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <PrefillBanner sourceLabel={`Invoice #${invoiceNo}`} targetLabel="Payment" />
             <input type="hidden" name="salesInvoiceId" value={invoiceId} />
             <input type="hidden" name="proofImageUrl" value={proofUrl} />
@@ -149,6 +158,7 @@ export function PaymentForm({
               </FormItem>
             )} />
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Record Payment</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

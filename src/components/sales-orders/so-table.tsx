@@ -39,7 +39,7 @@ const columns: ColumnDef<SO>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={row.original.status === "CANCELLED" ? "destructive" : row.original.status === "COMPLETED" ? "default" : "secondary"}>
+      <Badge variant={row.original.status === "CANCELLED" ? "destructive" : row.original.status === "COMPLETED" ? "default" : row.original.status === "DELIVERED" ? "default" : "secondary"}>
         {STATUS_LABELS[row.original.status] ?? row.original.status}
       </Badge>
     ),

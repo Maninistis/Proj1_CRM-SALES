@@ -7,6 +7,8 @@ import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { isValidTransition } from "../types";
 import { prisma } from "@/lib/prisma";
+import { syncSalesOrderFromDelivery } from "@/lib/workflow/so-status-sync";
+import { checkPaymentBeforeDelivery } from "@/lib/workflow/delivery-policy";
 import {
   findMany,
   findById,
@@ -59,8 +61,15 @@ export async function create_(input: {
     include: { items: { where: { deletedAt: null } } },
   });
   if (!so) throw new NotFoundError("Sales Order", input.salesOrderId);
-  if (!["CONFIRMED", "FULFILLING", "INVOICED", "DELIVERED", "COMPLETED"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be confirmed and invoiced before creating a delivery note");
+  if (!["PARTIALLY_PAID", "FULLY_PAID", "DELIVERED"].includes(so.status)) {
+    throw new ConflictError(
+      `Sales Order must be PARTIALLY_PAID or FULLY_PAID before delivery (current: ${so.status})`
+    );
+  }
+
+  const policy = await checkPaymentBeforeDelivery(input.salesOrderId);
+  if (!policy.canDeliver) {
+    throw new ConflictError(policy.reason ?? "Delivery not allowed by payment policy");
   }
 
   for (const item of input.items) {
@@ -92,7 +101,7 @@ export async function create_(input: {
   });
 
   await updateDeliveredQuantities(input.salesOrderId, session!.user.businessId!);
-  await checkAndAutoTransitionSO(input.salesOrderId);
+  await syncSalesOrderFromDelivery(input.salesOrderId);
 
   await audit({
     entityType: "DeliveryNote",
@@ -129,29 +138,7 @@ async function updateDeliveredQuantities(salesOrderId: string, businessId: strin
 }
 
 async function checkAndAutoTransitionSO(salesOrderId: string) {
-  const so = await prisma.salesOrder.findFirst({
-    where: { id: salesOrderId },
-    include: { items: { where: { deletedAt: null } } },
-  });
-  if (!so) return;
-
-  if (so.status === "CONFIRMED" || so.status === "INVOICED") {
-    await prisma.salesOrder.update({
-      where: { id: salesOrderId },
-      data: { status: "FULFILLING" },
-    });
-  }
-
-  const allDelivered = so.items.every(
-    (item) => Number(item.deliveredQuantity) >= Number(item.quantity)
-  );
-
-  if (allDelivered && so.status !== "DELIVERED") {
-    await prisma.salesOrder.update({
-      where: { id: salesOrderId },
-      data: { status: "DELIVERED" },
-    });
-  }
+  await syncSalesOrderFromDelivery(salesOrderId);
 }
 
 export async function transition(id: string, to: string) {
@@ -181,6 +168,8 @@ export async function transition(id: string, to: string) {
     newState: { status: to },
   });
 
+  await syncSalesOrderFromDelivery(existing.salesOrderId);
+
   if (to === "DELIVERED") {
     await notifyBusinessStakeholders({
       actorId: session!.user.userId,
@@ -206,6 +195,7 @@ export async function softDelete_(id: string) {
   await softDelete(id);
 
   await updateDeliveredQuantities(existing.salesOrderId, session!.user.businessId!);
+  await syncSalesOrderFromDelivery(existing.salesOrderId);
 
   await audit({
     entityType: "DeliveryNote",
@@ -227,6 +217,7 @@ export async function restore_(id: string) {
   const dn = await restore(id);
 
   await updateDeliveredQuantities(existing.salesOrderId, session!.user.businessId!);
+  await syncSalesOrderFromDelivery(existing.salesOrderId);
 
   await audit({
     entityType: "DeliveryNote",

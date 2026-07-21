@@ -8,6 +8,7 @@ import { createInvoiceAction, type InvActionState } from "@/features/sales-invoi
 import { computeAllTotals, calcLineTotal } from "@/features/quotation/calculations";
 import { ProductDescriptionInput, type CatalogItem } from "@/components/quotations/product-description-input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,15 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
       <CardHeader><CardTitle>New Invoice — {soDocumentNo} ({customerName})</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             {prefill && <PrefillBanner sourceLabel={prefill.sourceLabel} targetLabel="Invoice" />}
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
             <div className="grid sm:grid-cols-3 gap-4">
@@ -129,6 +138,7 @@ export function InvoiceForm({ salesOrderId, soDocumentNo, customerName, defaultT
               <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Create Invoice</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

@@ -5,6 +5,7 @@ import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
+import { syncSalesOrderFromInvoice } from "@/lib/workflow/so-status-sync";
 import { prisma } from "@/lib/prisma";
 import {
   findMany,
@@ -133,42 +134,27 @@ async function recalculateInvoiceBalance(invoiceId: string) {
   const totalPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const grandTotal = Number(invoice.grandTotal);
 
+  const newInvoiceStatus =
+    totalPaid >= grandTotal && grandTotal > 0
+      ? "PAID"
+      : totalPaid > 0
+        ? "PARTIALLY_PAID"
+        : invoice.status === "OVERDUE"
+          ? "OVERDUE"
+          : invoice.status === "VOIDED"
+            ? "VOIDED"
+            : "OPEN";
+
   await prisma.salesInvoice.update({
     where: { id: invoiceId },
     data: {
       paidAmount: totalPaid,
       paidAt: totalPaid > 0 ? invoice.payments[0]?.paymentDate : null,
-      status: totalPaid >= grandTotal ? "PAID" : totalPaid > 0 ? "PARTIALLY_PAID" : invoice.status === "OVERDUE" ? "OVERDUE" : "OPEN",
+      status: newInvoiceStatus,
     },
   });
 
-  if (totalPaid >= grandTotal) {
-    await checkAndCompleteSalesOrder(invoice.salesOrderId);
-  }
-}
-
-async function checkAndCompleteSalesOrder(salesOrderId: string) {
-  const so = await prisma.salesOrder.findFirst({
-    where: { id: salesOrderId },
-    include: {
-      invoice: {
-        include: {
-          payments: { where: { deletedAt: null, status: "RECEIVED" } },
-        },
-      },
-    },
-  });
-  if (!so || !so.invoice) return;
-
-  const grandTotal = Number(so.invoice.grandTotal);
-  const totalPaid = so.invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
-
-  if (totalPaid >= grandTotal && so.status !== "COMPLETED") {
-    await prisma.salesOrder.update({
-      where: { id: salesOrderId },
-      data: { status: "COMPLETED" },
-    });
-  }
+  await syncSalesOrderFromInvoice(invoice.salesOrderId);
 }
 
 export async function softDelete_(id: string) {

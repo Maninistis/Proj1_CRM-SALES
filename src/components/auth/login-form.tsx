@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/features/user/schemas/login-schema";
 import { loginAction, quickLoginAction, type AuthActionState } from "@/features/user/actions/auth-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Shield, Users, User } from "lucide-react";
@@ -37,7 +38,15 @@ export function LoginForm() {
       </div>
 
       <Form {...form}>
-        <form action={formAction} className="space-y-4">
+        <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
           <FormField control={form.control} name="email" render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
@@ -53,6 +62,7 @@ export function LoginForm() {
             </FormItem>
           )} />
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+          <FormValidationSummary />
           <Button type="submit" className="w-full bg-[#DF853A] hover:bg-[#C76E26]">Sign In</Button>
         </form>
       </Form>

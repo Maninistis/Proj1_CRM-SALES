@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { dnCreateSchema, type DNCreateInput } from "@/features/delivery-note/schemas/dn-create";
 import { createDNAction, type DNActionState } from "@/features/delivery-note/actions/dn-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,15 @@ export function DNForm({ salesOrderId, soDocumentNo, soItems }: { salesOrderId: 
       <CardHeader><CardTitle>New Delivery Note — {soDocumentNo}</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <PrefillBanner sourceLabel={`Sales Order #${soDocumentNo}`} targetLabel="Delivery Note" />
             <input type="hidden" name="salesOrderId" value={salesOrderId} />
 
@@ -125,6 +134,7 @@ export function DNForm({ salesOrderId, soDocumentNo, soItems }: { salesOrderId: 
             )} />
 
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Create Delivery Note</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

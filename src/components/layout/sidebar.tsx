@@ -65,15 +65,14 @@ export function Sidebar({
     return () => window.removeEventListener("sidebar-toggle", handler);
   }, []);
 
+  const GLOBAL_VIEW_HREFS = new Set(["/dashboard", "/pipeline", "/team"]);
+
   const filteredGroups = navGroups
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => {
-        if (isGlobalView) {
-          return (
-            (item.href === "/dashboard" || item.href === "/pipeline") &&
-            hasPermission(user.permissions, item.permission)
-          );
+        if (isGlobalView && !GLOBAL_VIEW_HREFS.has(item.href)) {
+          return false;
         }
         return hasPermission(user.permissions, item.permission);
       }),

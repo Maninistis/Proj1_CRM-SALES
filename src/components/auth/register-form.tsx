@@ -19,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +55,15 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <FormField
               control={form.control}
               name="name"
@@ -106,7 +115,7 @@ export function RegisterForm() {
             {state.error && (
               <p className="text-sm text-destructive">{state.error}</p>
             )}
-
+            <FormValidationSummary />
             <Button type="submit" className="w-full">
               Create Account
             </Button>

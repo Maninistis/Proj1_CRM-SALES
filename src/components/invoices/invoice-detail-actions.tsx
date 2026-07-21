@@ -4,11 +4,11 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { deleteInvoiceAction, restoreInvoiceAction, transitionInvoiceAction } from "@/features/sales-invoice/actions/invoice-actions";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Trash2, RotateCcw } from "lucide-react";
+import { Trash2, RotateCcw, Ban } from "lucide-react";
 
-type Props = { invId: string; status: string; isDeleted: boolean };
+type Props = { invId: string; status: string; isDeleted: boolean; canVoid: boolean };
 
-export function InvoiceDetailActions({ invId, status, isDeleted }: Props) {
+export function InvoiceDetailActions({ invId, status, isDeleted, canVoid }: Props) {
   if (isDeleted) {
     return (
       <form action={async () => { await restoreInvoiceAction(invId); }}>
@@ -18,14 +18,10 @@ export function InvoiceDetailActions({ invId, status, isDeleted }: Props) {
   }
 
   const canRecordPayment = status === "OPEN" || status === "PARTIALLY_PAID" || status === "OVERDUE";
+  const canVoidInvoice = canVoid && (status === "OPEN" || status === "PARTIALLY_PAID" || status === "OVERDUE");
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {status === "DRAFT" && (
-        <form action={async () => { await transitionInvoiceAction(invId, "OPEN"); }}>
-          <Button type="submit" size="sm">Issue Invoice</Button>
-        </form>
-      )}
       {canRecordPayment && (
         <Link
           href={`/payments/new?inv=${invId}`}
@@ -34,9 +30,15 @@ export function InvoiceDetailActions({ invId, status, isDeleted }: Props) {
           Record Payment
         </Link>
       )}
+      {canVoidInvoice && (
+        <form action={async () => { await transitionInvoiceAction(invId, "VOIDED"); }}>
+          <Button type="submit" variant="outline" size="sm" className="text-red-600"><Ban className="mr-2 h-4 w-4" /> Void Invoice</Button>
+        </form>
+      )}
       <form action={async () => { await deleteInvoiceAction(invId); }}>
         <Button type="submit" variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
       </form>
     </div>
   );
 }
+

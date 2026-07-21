@@ -107,7 +107,7 @@ export async function create(data: {
       grandTotal: data.grandTotal,
       notes: data.notes || null,
       createdById: data.createdById,
-      status: "CONFIRMED",
+      status: "AWAITING_PAYMENT",
       items: { create: data.items },
     },
     include: soInclude,

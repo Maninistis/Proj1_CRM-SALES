@@ -5,7 +5,14 @@ export const soQuerySchema = z.object({
   pageSize: z.coerce.number().min(1).max(100).default(20),
   search: z.string().optional(),
   status: z
-    .enum(["DRAFT", "PENDING", "CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED", "COMPLETED", "CANCELLED"])
+    .enum([
+      "AWAITING_PAYMENT",
+      "PARTIALLY_PAID",
+      "FULLY_PAID",
+      "DELIVERED",
+      "COMPLETED",
+      "CANCELLED",
+    ])
     .optional(),
   deleted: z.enum(["true", "false"]).default("false"),
 });

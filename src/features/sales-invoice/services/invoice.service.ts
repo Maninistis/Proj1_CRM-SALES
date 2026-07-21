@@ -64,8 +64,10 @@ export async function create_(input: {
   });
   if (!so) throw new NotFoundError("Sales Order", input.salesOrderId);
 
-  if (!["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be CONFIRMED to create an invoice");
+  if (so.status !== "AWAITING_PAYMENT") {
+    throw new ConflictError(
+      `Sales Order must be in AWAITING_PAYMENT to create an invoice (current: ${so.status})`
+    );
   }
 
   const existing = await findBySalesOrderId(input.salesOrderId);
@@ -114,11 +116,6 @@ export async function create_(input: {
     })),
   });
 
-  await prisma.salesOrder.update({
-    where: { id: input.salesOrderId },
-    data: { status: "INVOICED" },
-  });
-
   await audit({
     entityType: "Invoice",
     entityId: invoice.id,
@@ -148,8 +145,10 @@ export async function generateFromSalesOrder(salesOrderId: string) {
   });
   if (!so) throw new NotFoundError("Sales Order", salesOrderId);
 
-  if (!["CONFIRMED", "FULFILLING", "DELIVERED", "INVOICED"].includes(so.status)) {
-    throw new ConflictError("Sales Order must be CONFIRMED to create an invoice");
+  if (so.status !== "AWAITING_PAYMENT") {
+    throw new ConflictError(
+      `Sales Order must be in AWAITING_PAYMENT to create an invoice (current: ${so.status})`
+    );
   }
 
   const existing = await findBySalesOrderId(salesOrderId);
@@ -202,11 +201,6 @@ export async function generateFromSalesOrder(salesOrderId: string) {
       discountPercent: item.discountPercent,
       lineTotal: totals.lineTotals[i],
     })),
-  });
-
-  await prisma.salesOrder.update({
-    where: { id: salesOrderId },
-    data: { status: "INVOICED" },
   });
 
   await audit({

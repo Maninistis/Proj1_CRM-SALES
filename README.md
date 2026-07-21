@@ -74,13 +74,13 @@ The system standardizes the entire sales workflow — Lead → Opportunity → Q
 - Customer validation: must be ACTIVE
 - Quotation validation: must be ACCEPTED and not already converted
 - Line items with computed totals
-- Status workflow: CONFIRMED → FULFILLING → DELIVERED → INVOICED → COMPLETED
+- Status workflow: AWAITING_PAYMENT → PARTIALLY_PAID → FULLY_PAID → DELIVERED → COMPLETED (plus CANCELLED as non-lifecycle terminal). Statuses are derived from workflow events (payments, delivery), not edited manually.
 
 ### Invoices
 
 - Generate from confirmed Sales Orders
 - Customer snapshot (name, email, phone, address) captured at creation
-- Status workflow: OPEN → PARTIAL → PAID / VOID / OVERDUE
+- Status workflow: OPEN → PARTIALLY_PAID → PAID (terminal: OVERDUE, VOIDED). Invoice statuses represent financial state only — never operational fulfillment.
 - Paid amount tracking
 - PDF generation and print view
 
@@ -97,10 +97,10 @@ The system standardizes the entire sales workflow — Lead → Opportunity → Q
 
 - Create from Sales Orders via the "Create Delivery Note" button on SO detail page
 - Delivery requires full payment (`requireFullPayment: true`) — validated server-side
-- Accepts Sales Orders in CONFIRMED, FULFILLING, INVOICED, DELIVERED, or COMPLETED status
+- Accepts Sales Orders in PARTIALLY_PAID, FULLY_PAID, or DELIVERED status (per business Delivery Payment Policy)
 - Track carrier and tracking number
 - Line items derived from Sales Order items with remaining quantity calculation
-- Auto-transitions SO status (CONFIRMED/INVOICED → FULFILLING → DELIVERED)
+- Auto-transitions SO status: DN → DELIVERED triggers SO → DELIVERED; DN → ACKNOWLEDGED triggers SO → COMPLETED
 
 ### Pipeline Tracking
 

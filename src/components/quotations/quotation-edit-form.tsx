@@ -7,6 +7,7 @@ import { quotationUpdateSchema, type QuotationUpdateInput } from "@/features/quo
 import { updateQuotationAction, type QuoteActionState } from "@/features/quotation/actions/quotation-actions";
 import { computeAllTotals, calcLineTotal } from "@/features/quotation/calculations";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,15 @@ export function QuotationEditForm({ quote, catalog }: { quote: QuoteFormData; ca
       <CardHeader><CardTitle>Edit Quotation</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-6">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-6"
+>
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -261,6 +270,7 @@ export function QuotationEditForm({ quote, catalog }: { quote: QuoteFormData; ca
 
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

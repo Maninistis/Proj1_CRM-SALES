@@ -86,6 +86,7 @@ export const PERMISSIONS = [
 export const ROUTE_PERMISSIONS: Record<string, string> = {
   "/dashboard": "dashboard:read",
   "/pipeline": "leads:read",
+  "/team": "users:read",
   "/leads": "leads:read",
   "/opportunities": "opportunities:read",
   "/quotations": "quotations:read",

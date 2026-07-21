@@ -8,6 +8,7 @@ import { updateOpportunityAction, type OpportunityActionState } from "@/features
 import { buildItems, buildOptionItems } from "@/lib/select-helpers";
 import { STAGE_OPTIONS } from "@/features/opportunity/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,15 @@ export function OpportunityEditForm({
       <CardHeader><CardTitle>Edit Opportunity</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             <FormField
               control={form.control}
               name="title"
@@ -160,6 +169,7 @@ export function OpportunityEditForm({
               />
             )}
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Save Changes</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>

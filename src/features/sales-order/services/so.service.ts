@@ -234,12 +234,6 @@ export async function transition(id: string, to: string) {
     throw new ConflictError(`Cannot transition from ${existing.status} to ${to}`);
   }
 
-  if (to === "CANCELLED") {
-    if (existing.status === "FULFILLING") {
-      throw new ConflictError("Cannot cancel an order that is being fulfilled");
-    }
-  }
-
   const so = await updateStatus(id, to);
 
   await audit({

@@ -7,15 +7,25 @@ import { SOTable } from "@/components/sales-orders/so-table";
 import { STATUS_OPTIONS } from "@/features/sales-order/constants";
 import { cn } from "@/lib/utils";
 
+const LEGACY_STATUS_MAP: Record<string, string> = {
+  DRAFT: "AWAITING_PAYMENT",
+  PENDING: "AWAITING_PAYMENT",
+  CONFIRMED: "AWAITING_PAYMENT",
+  FULFILLING: "PARTIALLY_PAID",
+  INVOICED: "AWAITING_PAYMENT",
+};
+
 export default async function SalesOrdersPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const rawStatus = typeof params.status === "string" ? params.status : undefined;
+  const normalizedStatus = rawStatus ? LEGACY_STATUS_MAP[rawStatus] ?? rawStatus : undefined;
   const query = soQuerySchema.parse({
     page: params.page || 1, pageSize: params.pageSize || 20,
-    search: params.search, status: params.status, deleted: params.deleted || "false",
+    search: params.search, status: normalizedStatus, deleted: params.deleted || "false",
   });
 
   const { data, total } = await listSOs({

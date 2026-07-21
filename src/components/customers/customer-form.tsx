@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { customerCreateSchema, type CustomerCreateInput } from "@/features/customer/schemas/customer-create";
 import { createCustomerAction, type CustomerActionState } from "@/features/customer/actions/customer-actions";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormValidationSummary } from "@/components/ui/form-validation-summary";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/forms/money-input";
 import { PhoneInput } from "@/components/forms/phone-input";
@@ -41,7 +42,15 @@ export function CustomerForm({
       <CardHeader><CardTitle>New Customer</CardTitle></CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-4">
+          <form
+  action={async (fd) => {
+    const valid = await form.trigger();
+    if (!valid) return;
+    await formAction(fd);
+  }}
+  noValidate
+  className="space-y-4"
+>
             {prefill?.leadId && (
               <input type="hidden" name="leadId" value={prefill.leadId} />
             )}
@@ -58,8 +67,8 @@ export function CustomerForm({
             <FormField control={form.control} name="email" render={({ field }) => (
               <FormItem><FormLabel>Email *</FormLabel><FormControl><Input type="email" placeholder="info@acme.com" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField control={form.control} name="phone" render={({ field }) => (
-              <FormItem><FormLabel>Phone *</FormLabel><FormControl><Input placeholder="+63 2 123 4567" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem><FormLabel>Phone *</FormLabel><FormControl><PhoneInput placeholder="+63 2 123 4567" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -113,6 +122,7 @@ export function CustomerForm({
             </div>
 
             {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+            <FormValidationSummary />
             <div className="flex gap-2">
               <Button type="submit">Create Customer</Button>
               <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>
