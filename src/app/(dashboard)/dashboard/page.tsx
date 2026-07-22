@@ -31,7 +31,7 @@ import { EmployeePipelineView } from "@/components/dashboard/employee/employee-p
 import { EmployeeQuickActions } from "@/components/dashboard/employee/employee-quick-actions";
 import { EmployeeGettingStarted } from "@/components/dashboard/employee/employee-getting-started";
 
-import { UserPlus, TrendingUp, Building2, ShoppingCart, Receipt, Truck } from "lucide-react";
+import { UserPlus, TrendingUp, ShoppingCart, Receipt, Truck, Clock } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { isPrivilegedUser } from "@/lib/auth/data-scope";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -182,20 +182,20 @@ async function ManagerDashboard({
 
       {/* Row 1 — KPI Workflow Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {kpis.leads !== null && (
-          <KpiCard title="Total Leads" value={kpis.leads} description="all leads" icon={UserPlus} trend={kpis.leadsTrend} href="/leads" accent="#1A5366" />
+        {kpis.uncontactedLeads !== null && (
+          <KpiCard title="Uncontacted Leads" value={kpis.uncontactedLeads} description="awaiting first contact" icon={UserPlus} href="/leads" accent="#1A5366" />
         )}
         {kpis.activeOpportunities !== null && (
           <KpiCard title="Active Opps" value={kpis.activeOpportunities} description={`₱${kpis.oppsValue.toLocaleString()} value`} icon={TrendingUp} href="/opportunities" accent="#2F6D7A" />
         )}
-        {kpis.customers !== null && (
-          <KpiCard title="Customers" value={kpis.customers} description="active accounts" icon={Building2} trend={kpis.customersTrend} href="/customers" accent="#6B8A7A" />
-        )}
-        {kpis.salesOrders !== null && (
-          <KpiCard title="Sales Orders" value={kpis.salesOrders} description="in progress" icon={ShoppingCart} href="/sales-orders" accent="#8A6446" />
+        {kpis.awaitingPayment !== null && (
+          <KpiCard title="Awaiting Payment" value={kpis.awaitingPayment} description="SOs unpaid" icon={Clock} href="/sales-orders" accent="#8A6446" />
         )}
         {kpis.pendingInvoices !== null && (
-          <KpiCard title="Pending Inv." value={kpis.pendingInvoices} description="awaiting payment" icon={Receipt} href="/sales-invoices" accent="#E3B04B" />
+          <KpiCard title="Open Invoices" value={kpis.pendingInvoices} description="awaiting payment" icon={Receipt} href="/sales-invoices" accent="#E3B04B" />
+        )}
+        {kpis.readyForDelivery !== null && (
+          <KpiCard title="Ready for Delivery" value={kpis.readyForDelivery} description="paid · unfulfilled" icon={Truck} href="/delivery-notes" accent="#4A5560" />
         )}
         {kpis.totalRevenue !== null && (
           <KpiCard title="Revenue" value={`₱${kpis.totalRevenue.toLocaleString()}`} description="collected" icon={Truck} href="/payments" accent="#2E8B57" />
@@ -265,17 +265,17 @@ async function EmployeeDashboard() {
         {data.permissions.opportunities && (
           <KpiCard title="Active Opps" value={data.kpiStats.activeOpportunities} description="open deals" icon={TrendingUp} href="/opportunities" accent="#2F6D7A" />
         )}
-        {data.permissions.customers && (
-          <KpiCard title="Customers" value={data.kpiStats.assignedCustomers} description="accounts owned" icon={Building2} href="/customers" accent="#6B8A7A" />
-        )}
         {data.permissions.salesOrders && (
-          <KpiCard title="Sales Orders" value={data.kpiStats.assignedSalesOrders} description="in progress" icon={ShoppingCart} href="/sales-orders" accent="#8A6446" />
+          <KpiCard title="Awaiting Payment" value={data.kpiStats.assignedSalesOrders} description="SOs in progress" icon={Clock} href="/sales-orders" accent="#8A6446" />
         )}
         {data.permissions.invoices && (
-          <KpiCard title="Pending Inv." value={data.kpiStats.pendingInvoices} description="awaiting payment" icon={Receipt} href="/sales-invoices" accent="#E3B04B" />
+          <KpiCard title="Open Invoices" value={data.kpiStats.pendingInvoices} description="awaiting payment" icon={Receipt} href="/sales-invoices" accent="#E3B04B" />
         )}
         {data.permissions.salesOrders && data.permissions.invoices && data.permissions.deliveryNotes && (
           <KpiCard title="Ready for Delivery" value={data.kpiStats.readyForDelivery} description={data.kpiStats.readyForDeliveryPriorDeleted > 0 ? `paid & unfulfilled · ${data.kpiStats.readyForDeliveryPriorDeleted} prior deletion${data.kpiStats.readyForDeliveryPriorDeleted === 1 ? "" : "s"}` : "paid & unfulfilled"} icon={Truck} href="/delivery-notes" accent="#4A5560" />
+        )}
+        {data.permissions.payments && (
+          <KpiCard title="Revenue" value={`₱${(data.monthlyPerformance?.revenueClosed ?? 0).toLocaleString()}`} description="this month" icon={ShoppingCart} href="/payments" accent="#2E8B57" />
         )}
       </div>
 

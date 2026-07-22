@@ -2,6 +2,12 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getScopeUserId } from "@/lib/auth/data-scope";
+import {
+  UNCONTACTED_LEAD_STATUSES,
+  ACTIVE_OPPORTUNITY_STATUSES,
+  SO_AWAITING_PAYMENT_STATUSES,
+  OPEN_INVOICE_STATUSES,
+} from "@/features/dashboard/metric-definitions";
 
 type DateRange = "today" | "7d" | "30d" | "month" | "year" | "all";
 
@@ -66,11 +72,11 @@ export async function getDashboardData(range: DateRange = "all") {
   const canQuotes = hasPermission(perms, "quotations:read");
 
   const [
-    leadCount, leadPrev,
+    uncontactedLeads,
     activeOpps, oppsValue,
-    customerCount, customerPrev,
-    soCount,
+    awaitingPaymentSOs,
     pendingInvCount,
+    readyForDeliveryCount,
     revenue, revenuePrev,
     pipeline,
     revenueTrend,
@@ -79,28 +85,29 @@ export async function getDashboardData(range: DateRange = "all") {
     topCust,
     notifs,
   ] = await Promise.all([
-    canLeads ? prisma.lead.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, createdAt: { gte: startDate }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
-    canLeads ? prisma.lead.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, createdAt: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
-    canOpps ? prisma.opportunity.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "OPEN", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
-    canOpps ? prisma.opportunity.aggregate({ _sum: { estimatedValue: true }, where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "OPEN", ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
-    canCust ? prisma.customer.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "ACTIVE", createdAt: { gte: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
-    canCust ? prisma.customer.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "ACTIVE", createdAt: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
-    canSO ? prisma.salesOrder.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: ["AWAITING_PAYMENT", "PARTIALLY_PAID", "FULLY_PAID", "DELIVERED"] }, createdAt: { gte: startDate }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
-    canInv ? prisma.salesInvoice.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canLeads ? prisma.lead.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...UNCONTACTED_LEAD_STATUSES] }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canOpps ? prisma.opportunity.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...ACTIVE_OPPORTUNITY_STATUSES] }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canOpps ? prisma.opportunity.aggregate({ _sum: { estimatedValue: true }, where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...ACTIVE_OPPORTUNITY_STATUSES] }, ...(scopeUserId ? { OR: [{ assignedToId: scopeUserId }, { createdById: scopeUserId }] } : {}) } }) : null,
+    canSO ? prisma.salesOrder.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...SO_AWAITING_PAYMENT_STATUSES] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canInv ? prisma.salesInvoice.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...OPEN_INVOICE_STATUSES] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
+    canSO ? prisma.salesOrder.count({ where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "FULLY_PAID", deliveryNotes: { none: { deletedAt: null } }, ...(scopeUserId ? { createdById: scopeUserId } : {}) } }) : null,
     canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "RECEIVED", paymentDate: { gte: startDate }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) } }) : null,
     canPay ? prisma.payment.aggregate({ _sum: { amount: true }, where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: "RECEIVED", paymentDate: { gte: prevStart, lt: startDate }, ...(scopeUserId ? { receivedById: scopeUserId } : {}) } }) : null,
     getPipeline(perms, startDate, isAdmin, userId, scopeUserId, bizId),
     getRevenueTrend(perms, range, scopeUserId, bizId),
     canAudit ? prisma.auditLog.findMany({
+      where: { ...(bizId ? { businessId: bizId } : {}),
+        ...(scopeUserId ? { userId: scopeUserId } : {}),
+      },
       take: 10,
       orderBy: { createdAt: "desc" },
     }) : null,
     canInv ? prisma.salesInvoice.findMany({
-      where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: ["OPEN", "PARTIALLY_PAID", "OVERDUE"] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) },
+      where: { ...(bizId ? { businessId: bizId } : {}), deletedAt: null, status: { in: [...OPEN_INVOICE_STATUSES] }, ...(scopeUserId ? { createdById: scopeUserId } : {}) },
       take: 5, orderBy: { dueDate: "asc" },
       select: { id: true, documentNo: true, customerName: true, dueDate: true, grandTotal: true, paidAmount: true, status: true },
     }) : null,
-    canCust && canInv ? getTopCustomers(startDate, scopeUserId, bizId) : null,
+    canInv ? getTopCustomers(startDate, scopeUserId, bizId) : null,
     getNotifications(perms, startDate, scopeUserId, bizId),
   ]);
 
@@ -109,14 +116,12 @@ export async function getDashboardData(range: DateRange = "all") {
 
   return {
     kpis: {
-      leads: leadCount,
-      leadsTrend: leadCount !== null && leadPrev !== null ? leadCount - leadPrev : null,
+      uncontactedLeads,
       activeOpportunities: activeOpps,
       oppsValue: oppsValue?._sum.estimatedValue ? Number(oppsValue._sum.estimatedValue) : 0,
-      customers: customerCount,
-      customersTrend: customerCount !== null && customerPrev !== null ? customerCount - customerPrev : null,
-      salesOrders: soCount,
+      awaitingPayment: awaitingPaymentSOs,
       pendingInvoices: pendingInvCount,
+      readyForDelivery: readyForDeliveryCount,
       totalRevenue: revThis,
       revenueTrend: revThis - revPrev,
     },

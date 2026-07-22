@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { syncSalesOrderFromInvoice } from "@/lib/workflow/so-status-sync";
@@ -50,6 +51,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "payments:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const invoice = await prisma.salesInvoice.findFirst({
     where: { id: input.salesInvoiceId, deletedAt: null },
@@ -131,6 +133,18 @@ async function recalculateInvoiceBalance(invoiceId: string) {
   });
   if (!invoice) return;
 
+  // VOIDED is a terminal state — payment mutations must not resurrect it.
+  if (invoice.status === "VOIDED") {
+    await prisma.salesInvoice.update({
+      where: { id: invoiceId },
+      data: {
+        paidAmount: invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0),
+      },
+    });
+    await syncSalesOrderFromInvoice(invoice.salesOrderId);
+    return;
+  }
+
   const totalPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const grandTotal = Number(invoice.grandTotal);
 
@@ -141,9 +155,7 @@ async function recalculateInvoiceBalance(invoiceId: string) {
         ? "PARTIALLY_PAID"
         : invoice.status === "OVERDUE"
           ? "OVERDUE"
-          : invoice.status === "VOIDED"
-            ? "VOIDED"
-            : "OPEN";
+          : "OPEN";
 
   await prisma.salesInvoice.update({
     where: { id: invoiceId },

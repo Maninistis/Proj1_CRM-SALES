@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError } from "@/lib/errors";
 import { isValidTransition } from "../types";
@@ -55,6 +56,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "leads:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const documentNo = await generateDocumentNo("LEAD");
 

@@ -1,12 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-export async function findAll(businessId: string) {
-  return prisma.setting.findMany({
-    where: { businessId },
-    orderBy: { category: "asc" },
-  });
-}
-
 export async function findByKey(key: string, businessId: string) {
   return prisma.setting.findUnique({ where: { key_businessId: { key, businessId } } });
 }

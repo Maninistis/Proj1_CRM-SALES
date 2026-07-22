@@ -32,11 +32,7 @@ await assertOwnership(dn);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={dn.documentNo} description={dn.salesOrder?.customer?.name ?? "Unknown"}>
-        {!isDeleted && dn.status === "DRAFT" && (
-          <Link href={`/delivery-notes/${id}/edit`} className="text-sm text-primary hover:underline">Edit</Link>
-        )}
-      </PageHeader>
+      <PageHeader title={dn.documentNo} description={dn.salesOrder?.customer?.name ?? "Unknown"} />
 
       <div className="flex items-center gap-3">
         <Badge variant={dn.status === "CANCELLED" ? "destructive" : dn.status === "DELIVERED" || dn.status === "ACKNOWLEDGED" ? "default" : "secondary"}>

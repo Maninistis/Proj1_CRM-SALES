@@ -12,10 +12,12 @@ export async function findMany(params: {
   search?: string;
   status?: string;
   managerId?: string;
+  businessMembership?: Prisma.BusinessUserWhereInput;
 }) {
   const where: Prisma.UserWhereInput = {
     ...(params.status && { status: params.status }),
     ...(params.managerId && { managerId: params.managerId }),
+    ...(params.businessMembership && { businessMemberships: { some: params.businessMembership } }),
     ...(params.search && {
       OR: [
         { name: { contains: params.search } },

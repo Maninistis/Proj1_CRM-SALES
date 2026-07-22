@@ -31,11 +31,7 @@ await assertOwnership(so);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={so.documentNo} description={so.customer?.name ?? "Unknown customer"}>
-        {!isDeleted && so.status === "AWAITING_PAYMENT" && (
-          <Link href={`/sales-orders/${id}/edit`} className={buttonVariants({ variant: "outline" })}>Edit</Link>
-        )}
-      </PageHeader>
+      <PageHeader title={so.documentNo} description={so.customer?.name ?? "Unknown customer"} />
 
       <div className="flex items-center gap-3">
         <Badge variant={so.status === "CANCELLED" ? "destructive" : so.status === "COMPLETED" || so.status === "DELIVERED" ? "default" : "secondary"}>

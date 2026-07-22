@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { computeAllTotals } from "@/features/quotation/calculations";
@@ -57,6 +58,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "sales-invoices:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const so = await prisma.salesOrder.findFirst({
     where: { id: input.salesOrderId, deletedAt: null },
@@ -135,6 +137,7 @@ export async function create_(input: {
 export async function generateFromSalesOrder(salesOrderId: string) {
   const session = await auth();
   requirePermission(session, "sales-invoices:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const so = await prisma.salesOrder.findFirst({
     where: { id: salesOrderId, deletedAt: null },

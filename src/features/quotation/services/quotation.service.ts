@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { isValidTransition } from "../types";
@@ -67,6 +68,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "quotations:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const opp = await prisma.opportunity.findFirst({
     where: { id: input.opportunityId, deletedAt: null },
@@ -267,6 +269,7 @@ export async function transition(id: string, to: string) {
 export async function duplicate(id: string) {
   const session = await auth();
   requirePermission(session, "quotations:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const existing = await findById(id, undefined, session!.user.businessId!);
   if (!existing) throw new NotFoundError("Quotation", id);

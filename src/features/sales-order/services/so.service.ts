@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { computeAllTotals } from "@/features/quotation/calculations";
@@ -58,6 +59,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "sales-orders:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const customer = await prisma.customer.findFirst({
     where: { id: input.customerId, deletedAt: null },
@@ -142,6 +144,7 @@ export async function convertFromQuotation(
 ) {
   const session = await auth();
   requirePermission(session, "sales-orders:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const quote = await prisma.quotation.findFirst({
     where: { id: quotationId, deletedAt: null },
@@ -235,6 +238,34 @@ export async function transition(id: string, to: string) {
   }
 
   const so = await updateStatus(id, to);
+
+  // Cascade cancellation: void linked invoice (only if no received payments),
+  // and cancel any active delivery notes.
+  if (to === "CANCELLED") {
+    if (existing.invoice) {
+      const receivedPayments = await prisma.payment.count({
+        where: {
+          salesInvoiceId: existing.invoice.id,
+          deletedAt: null,
+          status: "RECEIVED",
+        },
+      });
+      if (receivedPayments === 0) {
+        await prisma.salesInvoice.update({
+          where: { id: existing.invoice.id },
+          data: { status: "VOIDED" },
+        });
+      }
+    }
+    await prisma.deliveryNote.updateMany({
+      where: {
+        salesOrderId: id,
+        deletedAt: null,
+        status: { in: ["DRAFT", "DISPATCHED", "DELIVERED"] },
+      },
+      data: { status: "CANCELLED" },
+    });
+  }
 
   await audit({
     entityType: "SalesOrder",

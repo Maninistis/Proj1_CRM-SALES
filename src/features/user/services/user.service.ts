@@ -30,11 +30,17 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "users:read");
 
+  const businessId = session!.user.businessId;
+  const businessFilter =
+    businessId && businessId !== "all"
+      ? { businessId }
+      : undefined;
+
   if (isManager(session!.user.permissions)) {
-    return findMany({ ...params, managerId: session!.user.userId });
+    return findMany({ ...params, managerId: session!.user.userId, businessMembership: businessFilter });
   }
 
-  return findMany(params);
+  return findMany({ ...params, businessMembership: businessFilter });
 }
 
 export async function getById(id: string) {

@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { notifyBusinessStakeholders } from "@/lib/notify";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import { isValidTransition } from "../types";
@@ -55,6 +56,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "delivery-notes:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const so = await prisma.salesOrder.findFirst({
     where: { id: input.salesOrderId, deletedAt: null },

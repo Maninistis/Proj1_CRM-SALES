@@ -1,13 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { requirePermission } from "@/lib/auth/require-permission";
-import { findAll, findByKey, upsert } from "../repositories/setting.repository";
-
-export async function list() {
-  const session = await auth();
-  requirePermission(session, "settings:read");
-  return findAll(session!.user.businessId ?? "");
-}
+import { findByKey, upsert } from "../repositories/setting.repository";
 
 export async function get(key: string) {
   const session = await auth();

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { audit } from "@/lib/audit";
 import { generateDocumentNo } from "@/lib/document-number";
 import { requirePermission } from "@/lib/auth/require-permission";
+import { requireActiveBusiness } from "@/lib/auth/require-active-business";
 import { getScopeUserId } from "@/lib/auth/data-scope";
 import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import {
@@ -57,6 +58,7 @@ export async function create_(input: {
 }) {
   const session = await auth();
   requirePermission(session, "opportunities:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const lead = await findLeadById(input.leadId);
   if (!lead) throw new NotFoundError("Lead", input.leadId);
@@ -100,6 +102,7 @@ export async function convertLead(
 ) {
   const session = await auth();
   requirePermission(session, "opportunities:create");
+  requireActiveBusiness(session!.user.businessId);
 
   const lead = await findLeadById(leadId);
   if (!lead) throw new NotFoundError("Lead", leadId);

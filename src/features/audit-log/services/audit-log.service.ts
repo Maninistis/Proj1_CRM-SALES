@@ -14,14 +14,23 @@ export async function list(params: {
   const session = await auth();
   requirePermission(session, "audit-logs:read");
 
+  const businessId = session!.user.businessId;
+
   if (!hasPermission(session!.user.permissions, "*")) {
     const teamMembers = await prisma.user.findMany({
       where: { managerId: session!.user.userId },
       select: { id: true },
     });
     const teamIds = [session!.user.userId, ...teamMembers.map((u) => u.id)];
-    return findMany({ ...params, userIds: teamIds });
+    return findMany({
+      ...params,
+      userIds: teamIds,
+      ...(businessId && businessId !== "all" ? { businessId } : {}),
+    });
   }
 
-  return findMany(params);
+  return findMany({
+    ...params,
+    ...(businessId && businessId !== "all" ? { businessId } : {}),
+  });
 }
